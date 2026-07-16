@@ -2,7 +2,9 @@
   "name": "Deucarian.BuildPipeline.Editor.Tests",
   "rootNamespace": "Deucarian.BuildPipeline.Tests",
   "references": [
-    "Deucarian.BuildPipeline.Editor"
+    "Deucarian.BuildPipeline.Editor",
+    "Deucarian.Editor",
+    "Deucarian.Logging"
   ],
   "includePlatforms": [
     "Editor"
