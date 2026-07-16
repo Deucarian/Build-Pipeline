@@ -1,0 +1,21 @@
+{
+  "name": "Deucarian.BuildPipeline.Editor.Tests",
+  "rootNamespace": "Deucarian.BuildPipeline.Tests",
+  "references": [
+    "Deucarian.BuildPipeline.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "noEngineReferences": false
+}

@@ -1,0 +1,8 @@
+/[Ll]ibrary/
+/[Ll]ogs/
+/[Tt]emp/
+/[Oo]bj/
+*.csproj
+*.sln
+*.user
+.DS_Store
