@@ -1,7 +1,10 @@
 {
   "name": "Deucarian.BuildPipeline.Editor",
   "rootNamespace": "Deucarian.BuildPipeline",
-  "references": [],
+  "references": [
+    "Deucarian.Editor",
+    "Deucarian.Logging"
+  ],
   "includePlatforms": [
     "Editor"
   ],

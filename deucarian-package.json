@@ -1,0 +1,28 @@
+{
+  "packageId": "com.deucarian.build-pipeline",
+  "displayName": "Deucarian Build Pipeline",
+  "ownedCapabilities": [
+    "build-pipeline"
+  ],
+  "runtimeAssemblies": [],
+  "editorAssemblies": [
+    "Deucarian.BuildPipeline.Editor"
+  ],
+  "sampleAssemblies": [],
+  "testAssemblies": [
+    "Deucarian.BuildPipeline.Editor.Tests"
+  ],
+  "requiredDependencies": [
+    "com.deucarian.editor",
+    "com.deucarian.logging"
+  ],
+  "optionalVersionDefinedDependencies": [],
+  "allowedDirectDebugCalls": [],
+  "allowedDirectUnityObjectLifetimeCalls": [
+    {
+      "file": "Editor/DeucarianBuildProfileUtility.cs",
+      "reason": "Disposes the transient non-asset BuildProfile instance returned by Unity's editor-only profile factory."
+    }
+  ],
+  "expectedSamplesRoot": ""
+}

@@ -177,13 +177,13 @@ namespace Deucarian.BuildPipeline.Tests
         public void ManifestSerializationContainsVersionsFingerprintAndBudget()
         {
             DeucarianBuildArtifactManifest manifest = CreatePassingProductionManifest();
-            manifest.packageVersion = "0.1.0";
+            manifest.packageVersion = "0.2.0";
             manifest.unityVersion = Application.unityVersion;
             manifest.settingsFingerprint = "abc123";
 
             string json = manifest.ToJson();
 
-            StringAssert.Contains("\"packageVersion\": \"0.1.0\"", json);
+            StringAssert.Contains("\"packageVersion\": \"0.2.0\"", json);
             StringAssert.Contains("\"settingsFingerprint\": \"abc123\"", json);
             StringAssert.Contains("\"passed\": true", json);
         }
