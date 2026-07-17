@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 - 2026-07-17
+
+- Applied the tool sample contract and aligned exact Editor and Logging dependencies.
+
 ## 0.2.1 - 2026-07-17
 
 - Made the Build Pipeline Manager wallpaper static so an idle window does not schedule continuous UI repaints.
