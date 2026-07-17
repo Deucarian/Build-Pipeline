@@ -587,9 +587,16 @@ namespace Deucarian.BuildPipeline
             {
                 result.Add("A build output path is required.");
             }
-            else if (Path.IsPathRooted(SelectedOutputPath))
+            else
             {
-                result.Add("The build output path must be project-relative.");
+                try
+                {
+                    DeucarianBuildPathUtility.ToFullOutputPath(SelectedOutputPath);
+                }
+                catch (Exception exception)
+                {
+                    result.Add(exception.GetBaseException().Message);
+                }
             }
 
             DeucarianBuildManagerProviderEntry entry = SelectedEntry;

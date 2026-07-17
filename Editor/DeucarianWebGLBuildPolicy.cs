@@ -23,6 +23,8 @@ namespace Deucarian.BuildPipeline
 
         public void ApplySettings(BuildProfile profile, DeucarianBuildEnvironment environment)
         {
+            DeucarianBuildEnvironmentGuard.RequireDefined(environment, nameof(environment));
+
             ValidateProfileTarget(profile);
             DeucarianBuildProfileUtility.EnsurePlayerSettingsOverride(profile);
 
@@ -65,6 +67,8 @@ namespace Deucarian.BuildPipeline
             BuildProfile profile,
             DeucarianBuildEnvironment environment)
         {
+            DeucarianBuildEnvironmentGuard.RequireDefined(environment, nameof(environment));
+
             DeucarianBuildValidationResult result = new DeucarianBuildValidationResult();
             if (profile == null)
             {
@@ -130,13 +134,22 @@ namespace Deucarian.BuildPipeline
             DeucarianBuildRequest request,
             DeucarianBuildArtifactManifest manifest)
         {
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            DeucarianBuildEnvironmentGuard.RequireDefined(
+                request.Environment, nameof(request.Environment));
+
             DeucarianBuildValidationResult result = new DeucarianBuildValidationResult();
             if (request.Environment != DeucarianBuildEnvironment.Production)
             {
                 return result;
             }
 
-            int compressedPayloadCount = 0;
+            HashSet<string> compressedPayloadClasses =
+                new HashSet<string>(StringComparer.Ordinal);
             for (int i = 0; i < manifest.artifacts.Count; i++)
             {
                 DeucarianBuildArtifact artifact = manifest.artifacts[i];
@@ -154,7 +167,7 @@ namespace Deucarian.BuildPipeline
                     }
                     else
                     {
-                        compressedPayloadCount++;
+                        compressedPayloadClasses.Add(artifact.classification);
                     }
 
                     string fileName = Path.GetFileName(path);
@@ -177,9 +190,19 @@ namespace Deucarian.BuildPipeline
                 }
             }
 
-            if (compressedPayloadCount < 3)
+            if (!compressedPayloadClasses.Contains("data"))
             {
-                result.Add("Production output is missing one or more Brotli data, framework, or WebAssembly payloads.");
+                result.Add("Production output is missing a Brotli data payload.");
+            }
+
+            if (!compressedPayloadClasses.Contains("framework"))
+            {
+                result.Add("Production output is missing a Brotli framework payload.");
+            }
+
+            if (!compressedPayloadClasses.Contains("wasm"))
+            {
+                result.Add("Production output is missing a Brotli WebAssembly payload.");
             }
 
             if (!manifest.budget.passed)
@@ -195,6 +218,8 @@ namespace Deucarian.BuildPipeline
 
         public string GetSettingsFingerprint(DeucarianBuildEnvironment environment)
         {
+            DeucarianBuildEnvironmentGuard.RequireDefined(environment, nameof(environment));
+
             string canonical = string.Join(
                 "\n",
                 GetExpectedSettings(environment));
@@ -213,6 +238,8 @@ namespace Deucarian.BuildPipeline
 
         internal BuildOptions GetRequiredBuildOptions(DeucarianBuildEnvironment environment)
         {
+            DeucarianBuildEnvironmentGuard.RequireDefined(environment, nameof(environment));
+
             return environment == DeucarianBuildEnvironment.Development
                 ? BuildOptions.Development | BuildOptions.AutoRunPlayer | BuildOptions.DetailedBuildReport
                 : BuildOptions.StrictMode | BuildOptions.DetailedBuildReport;
@@ -220,6 +247,8 @@ namespace Deucarian.BuildPipeline
 
         internal IReadOnlyList<string> GetExpectedSettings(DeucarianBuildEnvironment environment)
         {
+            DeucarianBuildEnvironmentGuard.RequireDefined(environment, nameof(environment));
+
             bool development = environment == DeucarianBuildEnvironment.Development;
             return new[]
             {

@@ -34,7 +34,7 @@ Each registered target provides:
 - An optional side-effect-free project validation callback.
 - A build callback returning `DeucarianBuildResult`.
 
-The callback owns project preflight, temporary state, output cleanup, and artifact validation. The manager never bypasses it.
+The callback owns project preflight, temporary state, product-specific extra cleanup, and post-build validation. Registered workflows remain callback-owned; the manager never bypasses their build callback.
 
 ## Core API
 
@@ -43,6 +43,8 @@ The callback owns project preflight, temporary state, output cleanup, and artifa
 - `IDeucarianPlatformBuildPolicy`: applies settings, detects drift, and validates generated artifacts.
 - `DeucarianBuildRunner.Build(request)`: validates and calls `BuildPipeline.BuildPlayer(BuildPlayerWithProfileOptions)`.
 - `DeucarianBuildArtifactManifest`: artifact paths and encoded/raw sizes, versions, build GUID, duration, settings fingerprint, and budget result.
+
+The runner and command-line entry point require project-relative, project-contained output paths. They reject `..` traversal, alternate-data-stream colons, control or Windows-invalid characters, segments ending in a dot or space, DOS short-name shapes, Windows device basenames, symbolic links or reparse points, and exactly these reserved roots: `.git`, `.github`, `.codex`, `.agents`, `Assets`, `Docs`, `Documentation`, `Documentation~`, `Packages`, `ProjectSettings`, `UserSettings`, `Library`, `Temp`, and `Logs`. Immediately before `BuildPlayer`, the runner deletes only an empty output directory or one carrying a valid current-schema Deucarian build manifest, then passes that same canonical absolute path to `BuildPlayer` and the manifest writer.
 
 The WebGL policy maps development to an inspectable, auto-running build and production to Brotli, hashed filenames, data caching, High managed stripping, size-optimized IL2CPP, engine stripping, and WebAssembly 2023. It leaves scenes, memory, rendering and quality assets, templates, identifiers, icons, and runtime content-loading behavior project-owned.
 
@@ -58,7 +60,7 @@ The command-line API remains stable:
 -deucarianOutput "Builds/WebGL/Production"
 ```
 
-Optional `-deucarianOptions` accepts a comma-separated list of `BuildOptions` names. Environment-required options are added by the runner.
+Optional `-deucarianOptions` accepts a comma-separated list of declared `BuildOptions` names only; numeric and undefined tokens are rejected. Direct API requests likewise reject bits not declared by the active Unity version. Environment-required options are added by the runner.
 
 ## Web deployment boundary
 

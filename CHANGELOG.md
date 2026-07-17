@@ -4,6 +4,9 @@
 
 - Made the Build Pipeline Manager wallpaper static so an idle window does not schedule continuous UI repaints.
 - Debounced project-change discovery and validation, and cancel pending refresh callbacks when the manager closes.
+- Required distinct Brotli data, framework, and WebAssembly payload classes in production output.
+- Added strict Development/Production validation, named-only command-line parsing, and declared-bit validation for direct build options.
+- Made canonical output containment and cleanup fail closed for reserved, DOS-alias-shaped, or Windows-unsafe segments, traversal, links, and nonempty directories without a current-schema Deucarian manifest.
 
 ## 0.2.0 - 2026-07-16
 

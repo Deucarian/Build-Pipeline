@@ -9,6 +9,9 @@ namespace Deucarian.BuildPipeline
 {
     public static class DeucarianBuildRunner
     {
+        private static readonly BuildOptions DeclaredBuildOptionsMask =
+            CreateDeclaredBuildOptionsMask();
+
         public static DeucarianBuildResult Build(DeucarianBuildRequest request)
         {
             ValidateRequest(request);
@@ -39,11 +42,15 @@ namespace Deucarian.BuildPipeline
             }
 
             ValidateBuildOptions(request.Environment, options);
+            string canonicalOutputPath =
+                DeucarianBuildPathUtility.CleanProjectContainedOutputDirectory(
+                request.OutputPath);
+
             BuildReport report = UnityEditor.BuildPipeline.BuildPlayer(
                 new BuildPlayerWithProfileOptions
                 {
                     buildProfile = request.BuildProfile,
-                    locationPathName = request.OutputPath,
+                    locationPathName = canonicalOutputPath,
                     options = options
                 });
             if (report.summary.result != BuildResult.Succeeded)
@@ -60,7 +67,7 @@ namespace Deucarian.BuildPipeline
             DeucarianBuildValidationResult artifactValidation = policy.ValidateGeneratedArtifacts(
                 request,
                 manifest);
-            manifest.WriteTo(DeucarianBuildPathUtility.ToFullOutputPath(request.OutputPath));
+            manifest.WriteTo(canonicalOutputPath);
             if (!artifactValidation.IsValid)
             {
                 throw new BuildFailedException(
@@ -90,6 +97,7 @@ namespace Deucarian.BuildPipeline
             BuildProfile profile,
             DeucarianBuildEnvironment environment)
         {
+            DeucarianBuildEnvironmentGuard.RequireDefined(environment, nameof(environment));
             IDeucarianPlatformBuildPolicy policy = GetPolicy(profile);
             policy.ApplySettings(profile, environment);
             DeucarianBuildValidationResult validation = policy.ValidateProfile(profile, environment);
@@ -105,6 +113,12 @@ namespace Deucarian.BuildPipeline
             {
                 throw new ArgumentNullException(nameof(request));
             }
+
+            DeucarianBuildEnvironmentGuard.RequireDefined(
+                request.Environment,
+                nameof(request.Environment));
+            RequireOnlyDeclaredBuildOptionBits(
+                request.AdditionalBuildOptions, nameof(request.AdditionalBuildOptions));
 
             if (request.BuildProfile == null)
             {
@@ -125,10 +139,15 @@ namespace Deucarian.BuildPipeline
             }
         }
 
-        private static void ValidateBuildOptions(
+        internal static void ValidateBuildOptions(
             DeucarianBuildEnvironment environment,
             BuildOptions options)
         {
+            DeucarianBuildEnvironmentGuard.RequireDefined(
+                environment,
+                nameof(environment));
+            RequireOnlyDeclaredBuildOptionBits(options, nameof(options));
+
             bool development = (options & BuildOptions.Development) != 0;
             if (environment == DeucarianBuildEnvironment.Production && development)
             {
@@ -140,6 +159,50 @@ namespace Deucarian.BuildPipeline
             {
                 throw new BuildFailedException(
                     "Development requests must include BuildOptions.Development.");
+            }
+        }
+
+        private static BuildOptions CreateDeclaredBuildOptionsMask()
+        {
+            BuildOptions mask = BuildOptions.None;
+            foreach (BuildOptions option in Enum.GetValues(typeof(BuildOptions)))
+            {
+                mask |= option;
+            }
+
+            return mask;
+        }
+
+        private static void RequireOnlyDeclaredBuildOptionBits(
+            BuildOptions options,
+            string parameterName)
+        {
+            BuildOptions unknownOptions = options & ~DeclaredBuildOptionsMask;
+            if (unknownOptions == BuildOptions.None)
+            {
+                return;
+            }
+
+            throw new ArgumentOutOfRangeException(
+                parameterName,
+                options,
+                "Build options contain bits that are not declared by this Unity version.");
+        }
+    }
+
+    internal static class DeucarianBuildEnvironmentGuard
+    {
+        internal static void RequireDefined(
+            DeucarianBuildEnvironment environment,
+            string parameterName)
+        {
+            if (environment != DeucarianBuildEnvironment.Development
+                && environment != DeucarianBuildEnvironment.Production)
+            {
+                throw new ArgumentOutOfRangeException(
+                    parameterName,
+                    environment,
+                    "Build environment must be Development or Production.");
             }
         }
     }

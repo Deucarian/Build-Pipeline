@@ -40,6 +40,8 @@ namespace Deucarian.BuildPipeline
             Func<DeucarianBuildResult> buildAction,
             Func<DeucarianBuildValidationResult> projectValidation = null)
         {
+            DeucarianBuildEnvironmentGuard.RequireDefined(environment, nameof(environment));
+
             Id = Require(id, nameof(id));
             DisplayName = Require(displayName, nameof(displayName));
             Description = description ?? string.Empty;

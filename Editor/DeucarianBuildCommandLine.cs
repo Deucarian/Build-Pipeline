@@ -13,12 +13,7 @@ namespace Deucarian.BuildPipeline
             string environmentValue = RequireValue(args, "-deucarianEnvironment");
             string outputPath = RequireValue(args, "-deucarianOutput");
 
-            DeucarianBuildEnvironment environment;
-            if (!Enum.TryParse(environmentValue, true, out environment))
-            {
-                throw new ArgumentException(
-                    "-deucarianEnvironment must be Development or Production.");
-            }
+            DeucarianBuildEnvironment environment = ParseEnvironment(environmentValue);
 
             BuildProfile profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(profilePath);
             if (profile == null)
@@ -26,23 +21,8 @@ namespace Deucarian.BuildPipeline
                 throw new ArgumentException("No Build Profile exists at '" + profilePath + "'.");
             }
 
-            BuildOptions additionalOptions = BuildOptions.None;
-            string optionsValue = GetValue(args, "-deucarianOptions");
-            if (!string.IsNullOrWhiteSpace(optionsValue))
-            {
-                string[] optionNames = optionsValue.Split(',');
-                for (int i = 0; i < optionNames.Length; i++)
-                {
-                    BuildOptions option;
-                    if (!Enum.TryParse(optionNames[i].Trim(), true, out option))
-                    {
-                        throw new ArgumentException(
-                            "Unknown BuildOptions value '" + optionNames[i] + "'.");
-                    }
-
-                    additionalOptions |= option;
-                }
-            }
+            BuildOptions additionalOptions = ParseBuildOptions(
+                GetValue(args, "-deucarianOptions"));
 
             DeucarianBuildRunner.Build(
                 new DeucarianBuildRequest(
@@ -50,6 +30,93 @@ namespace Deucarian.BuildPipeline
                     environment,
                     outputPath,
                     additionalOptions));
+        }
+
+        internal static DeucarianBuildEnvironment ParseEnvironment(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new ArgumentException(
+                    "-deucarianEnvironment must be Development or Production.",
+                    nameof(value));
+            }
+
+            string normalized = value.Trim();
+            DeucarianBuildEnvironment environment;
+            if (string.Equals(
+                    normalized,
+                    nameof(DeucarianBuildEnvironment.Development),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                environment = DeucarianBuildEnvironment.Development;
+            }
+            else if (string.Equals(
+                         normalized,
+                         nameof(DeucarianBuildEnvironment.Production),
+                         StringComparison.OrdinalIgnoreCase))
+            {
+                environment = DeucarianBuildEnvironment.Production;
+            }
+            else
+            {
+                throw new ArgumentException(
+                    "-deucarianEnvironment must be Development or Production.",
+                    nameof(value));
+            }
+
+            DeucarianBuildEnvironmentGuard.RequireDefined(environment, nameof(value));
+            return environment;
+        }
+
+        internal static BuildOptions ParseBuildOptions(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return BuildOptions.None;
+            }
+
+            BuildOptions options = BuildOptions.None;
+            string[] optionNames = value.Split(',');
+            for (int i = 0; i < optionNames.Length; i++)
+            {
+                string optionName = optionNames[i].Trim();
+                BuildOptions option;
+                if (!TryParseNamedBuildOption(optionName, out option))
+                {
+                    throw new ArgumentException(
+                        "Unknown BuildOptions value '" + optionNames[i] + "'.",
+                        nameof(value));
+                }
+
+                options |= option;
+            }
+
+            return options;
+        }
+
+        private static bool TryParseNamedBuildOption(
+            string optionName,
+            out BuildOptions option)
+        {
+            string[] declaredNames = Enum.GetNames(typeof(BuildOptions));
+            for (int i = 0; i < declaredNames.Length; i++)
+            {
+                if (!string.Equals(
+                        optionName,
+                        declaredNames[i],
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                option = (BuildOptions)Enum.Parse(
+                    typeof(BuildOptions),
+                    declaredNames[i]);
+                return true;
+            }
+
+            option = BuildOptions.None;
+            return false;
         }
 
         private static string RequireValue(string[] args, string key)
