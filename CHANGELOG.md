@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1 - 2026-07-17
+
+- Made the Build Pipeline Manager wallpaper static so an idle window does not schedule continuous UI repaints.
+- Debounced project-change discovery and validation, and cancel pending refresh callbacks when the manager closes.
+
 ## 0.2.0 - 2026-07-16
 
 - Added the shared Build Pipeline Manager and generic project workflow provider API.
