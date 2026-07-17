@@ -79,49 +79,63 @@ namespace Deucarian.BuildPipeline
                 return result;
             }
 
-            using (DeucarianBuildProfileUtility.ActivateTemporarily(profile))
+            if (!DeucarianBuildProfileSettingsSnapshot.TryCreate(
+                    profile,
+                    out DeucarianBuildProfileSettingsSnapshot settings,
+                    out string issue))
             {
-                bool development = environment == DeucarianBuildEnvironment.Development;
-                Expect(
-                    result,
-                    "WebGL compression",
-                    development ? WebGLCompressionFormat.Disabled : WebGLCompressionFormat.Brotli,
-                    PlayerSettings.WebGL.compressionFormat);
-                Expect(result, "hashed filenames", !development, PlayerSettings.WebGL.nameFilesAsHashes);
-                Expect(result, "data caching", !development, PlayerSettings.WebGL.dataCaching);
-                Expect(result, "decompression fallback", false, PlayerSettings.WebGL.decompressionFallback);
-                Expect(
-                    result,
-                    "debug symbol mode",
-                    development ? WebGLDebugSymbolMode.External : WebGLDebugSymbolMode.Off,
-                    PlayerSettings.WebGL.debugSymbolMode);
-                Expect(result, "diagnostics", development, PlayerSettings.WebGL.showDiagnostics);
-                Expect(
-                    result,
-                    "exception support",
-                    development
-                        ? WebGLExceptionSupport.FullWithStacktrace
-                        : WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly,
-                    PlayerSettings.WebGL.exceptionSupport);
-                Expect(
-                    result,
-                    "managed stripping",
-                    development ? ManagedStrippingLevel.Minimal : ManagedStrippingLevel.High,
-                    PlayerSettings.GetManagedStrippingLevel(NamedBuildTarget.WebGL));
-                Expect(
-                    result,
-                    "IL2CPP code generation",
-                    Il2CppCodeGeneration.OptimizeSize,
-                    PlayerSettings.GetIl2CppCodeGeneration(NamedBuildTarget.WebGL));
-                Expect(result, "engine stripping", true, PlayerSettings.stripEngineCode);
-                Expect(result, "WebAssembly 2023", true, PlayerSettings.WebGL.wasm2023);
-                Expect(result, "threads", false, PlayerSettings.WebGL.threadsSupport);
-                Expect(
-                    result,
-                    "API compatibility",
-                    ApiCompatibilityLevel.NET_Standard,
-                    PlayerSettings.GetApiCompatibilityLevel(NamedBuildTarget.WebGL));
+                result.Add(issue);
+                return result;
             }
+
+            bool development = environment == DeucarianBuildEnvironment.Development;
+            ExpectEnum(
+                result,
+                settings,
+                "WebGL compression",
+                "webGLCompressionFormat",
+                development ? WebGLCompressionFormat.Disabled : WebGLCompressionFormat.Brotli);
+            ExpectBool(result, settings, "hashed filenames", "webGLNameFilesAsHashes", !development);
+            ExpectBool(result, settings, "data caching", "webGLDataCaching", !development);
+            ExpectBool(result, settings, "decompression fallback", "webGLDecompressionFallback", false);
+            ExpectEnum(
+                result,
+                settings,
+                "debug symbol mode",
+                "webGLDebugSymbols",
+                development ? WebGLDebugSymbolMode.External : WebGLDebugSymbolMode.Off);
+            ExpectBool(result, settings, "diagnostics", "webGLShowDiagnostics", development);
+            ExpectEnum(
+                result,
+                settings,
+                "exception support",
+                "webGLExceptionSupport",
+                development
+                    ? WebGLExceptionSupport.FullWithStacktrace
+                    : WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly);
+            ExpectSectionEnum(
+                result,
+                settings,
+                "managed stripping",
+                "managedStrippingLevel",
+                "WebGL",
+                development ? ManagedStrippingLevel.Minimal : ManagedStrippingLevel.High);
+            ExpectSectionEnum(
+                result,
+                settings,
+                "IL2CPP code generation",
+                "il2cppCodeGeneration",
+                "WebGL",
+                Il2CppCodeGeneration.OptimizeSize);
+            ExpectBool(result, settings, "engine stripping", "stripEngineCode", true);
+            ExpectBool(result, settings, "WebAssembly 2023", "webWasm2023", true);
+            ExpectBool(result, settings, "threads", "webGLThreadsSupport", false);
+            ExpectEnum(
+                result,
+                settings,
+                "API compatibility",
+                "apiCompatibilityLevel",
+                ApiCompatibilityLevel.NET_Standard);
 
             return result;
         }
@@ -264,6 +278,59 @@ namespace Deucarian.BuildPipeline
             {
                 result.Add(setting + " drifted: expected " + expected + ", found " + actual + ".");
             }
+        }
+
+        private static void ExpectBool(
+            DeucarianBuildValidationResult result,
+            DeucarianBuildProfileSettingsSnapshot settings,
+            string setting,
+            string key,
+            bool expected)
+        {
+            if (!settings.TryGetBool(key, out bool actual))
+            {
+                result.Add(setting + " could not be read from the Build Profile override.");
+                return;
+            }
+
+            Expect(result, setting, expected, actual);
+        }
+
+        private static void ExpectEnum<T>(
+            DeucarianBuildValidationResult result,
+            DeucarianBuildProfileSettingsSnapshot settings,
+            string setting,
+            string key,
+            T expected)
+            where T : struct
+        {
+            if (!settings.TryGetInt(key, out int serialized))
+            {
+                result.Add(setting + " could not be read from the Build Profile override.");
+                return;
+            }
+
+            T actual = (T)Enum.ToObject(typeof(T), serialized);
+            Expect(result, setting, expected, actual);
+        }
+
+        private static void ExpectSectionEnum<T>(
+            DeucarianBuildValidationResult result,
+            DeucarianBuildProfileSettingsSnapshot settings,
+            string setting,
+            string section,
+            string key,
+            T expected)
+            where T : struct
+        {
+            if (!settings.TryGetSectionInt(section, key, out int serialized))
+            {
+                result.Add(setting + " could not be read from the Build Profile override.");
+                return;
+            }
+
+            T actual = (T)Enum.ToObject(typeof(T), serialized);
+            Expect(result, setting, expected, actual);
         }
 
         private static string FormatBytes(long bytes)
