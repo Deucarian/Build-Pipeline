@@ -2,17 +2,17 @@
 
 `com.deucarian.build-pipeline` is an editor-only Unity package for repeatable development and production builds. It keeps Build Profiles project-owned while centralizing the settings that should be consistent across Deucarian projects.
 
-Version 0.2.1 provides a single provider-driven Build Pipeline Manager with a static idle surface and debounced project-change validation. The public policy and provider interfaces are platform-neutral so Windows, Android, and iOS policies can be added without redesigning project integrations.
+Version 0.2.2 provides a single provider-driven Build Pipeline Manager with a static idle surface and debounced project-change validation. The public policy and provider interfaces are platform-neutral so Windows, Android, and iOS policies can be added without redesigning project integrations.
 
 ## Install
 
 Reference the release tag in `Packages/manifest.json`:
 
 ```json
-"com.deucarian.build-pipeline": "https://github.com/Deucarian/Build-Pipeline.git#v0.2.1"
+"com.deucarian.build-pipeline": "https://github.com/Deucarian/Build-Pipeline.git#v0.2.2"
 ```
 
-Unity 6.0 or newer is required. The package contains Editor assemblies only and contributes nothing to a player build. It depends directly on `com.deucarian.editor` 1.0.2 and `com.deucarian.logging` 1.0.1.
+Unity 6.0 or newer is required. The package contains Editor assemblies only and contributes nothing to a player build. It depends directly on `com.deucarian.editor` 1.0.3 and `com.deucarian.logging` 1.0.2.
 
 ## Build Pipeline Manager
 

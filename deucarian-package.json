@@ -1,6 +1,7 @@
 {
   "packageId": "com.deucarian.build-pipeline",
   "displayName": "Deucarian Build Pipeline",
+  "samplePolicy": "tool",
   "ownedCapabilities": [
     "build-pipeline"
   ],
