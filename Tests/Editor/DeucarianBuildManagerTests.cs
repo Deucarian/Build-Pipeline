@@ -86,6 +86,45 @@ namespace Deucarian.BuildPipeline.Tests
                     window.rootVisualElement.Q<VisualElement>(
                         DeucarianBuildManagerWindow.FooterName),
                     Is.Not.Null);
+                Assert.That(window.HasAmbientAnimationForTests, Is.False);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
+        public void ProjectChangesAreDebouncedAndCancelledWithWindowLifecycle()
+        {
+            DeucarianBuildManagerWindow window =
+                ScriptableObject.CreateInstance<DeucarianBuildManagerWindow>();
+            try
+            {
+                window.CreateGUI();
+                int refreshCount = window.DiscoveryRefreshCountForTests;
+
+                window.QueueProjectChangeRefreshForTests();
+                window.QueueProjectChangeRefreshForTests();
+
+                Assert.That(window.ProjectChangeRefreshPendingForTests, Is.True);
+                Assert.That(window.DiscoveryRefreshCountForTests, Is.EqualTo(refreshCount));
+
+                window.FlushProjectChangeRefreshForTests();
+
+                Assert.That(window.ProjectChangeRefreshPendingForTests, Is.False);
+                Assert.That(
+                    window.DiscoveryRefreshCountForTests,
+                    Is.EqualTo(refreshCount + 1));
+
+                window.QueueProjectChangeRefreshForTests();
+                MethodInfo onDisable = typeof(DeucarianBuildManagerWindow).GetMethod(
+                    "OnDisable",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(onDisable, Is.Not.Null);
+                onDisable.Invoke(window, null);
+
+                Assert.That(window.ProjectChangeRefreshPendingForTests, Is.False);
             }
             finally
             {

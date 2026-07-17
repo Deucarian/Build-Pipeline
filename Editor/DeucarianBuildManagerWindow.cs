@@ -27,6 +27,7 @@ namespace Deucarian.BuildPipeline
             "Deucarian.BuildPipeline.Manager.SelectedTarget";
         private const string WallpaperFadeName = "deucarian-build-pipeline-top-safe-fade";
         private const string CustomTargetLabel = "Custom Build Profile";
+        private const double ProjectChangeDebounceSeconds = 0.35d;
 
         private readonly List<DeucarianBuildManagerProviderEntry> providerEntries =
             new List<DeucarianBuildManagerProviderEntry>();
@@ -53,6 +54,9 @@ namespace Deucarian.BuildPipeline
         private string feedbackMessage = "Select a build target.";
         private DeucarianEditorStatus feedbackStatus = DeucarianEditorStatus.Info;
         private bool isBuilding;
+        private bool projectChangeRefreshPending;
+        private double projectChangeRefreshAt;
+        private int discoveryRefreshCount;
 
         internal static IReadOnlyList<string> UserFacingMenuPathsForTests =>
             new[] { MenuPath };
@@ -61,6 +65,11 @@ namespace Deucarian.BuildPipeline
         internal DeucarianEditorWorkbenchFooter FooterForTests => footer;
         internal DeucarianBuildValidationResult ValidationForTests => currentValidation;
         internal bool BuildEnabledForTests => buildButton != null && buildButton.enabledSelf;
+        internal bool HasAmbientAnimationForTests =>
+            rootVisualElement.Q<VisualElement>(
+                DeucarianEditorAmbientGlass.AmbientLayerName) != null;
+        internal bool ProjectChangeRefreshPendingForTests => projectChangeRefreshPending;
+        internal int DiscoveryRefreshCountForTests => discoveryRefreshCount;
 
         [MenuItem(MenuPath)]
         public static void OpenWindow()
@@ -94,6 +103,7 @@ namespace Deucarian.BuildPipeline
         private void OnDisable()
         {
             EditorApplication.projectChanged -= HandleProjectChanged;
+            CancelProjectChangeRefresh();
             workbench?.Dispose();
             workbench = null;
             footer = null;
@@ -116,6 +126,7 @@ namespace Deucarian.BuildPipeline
                     IncludeFooter = true,
                     TopSafeFadeName = WallpaperFadeName
                 });
+            RemoveAnimatedAmbientLayer();
             if (workbench.Toolbar == null || workbench.Content == null)
             {
                 return;
@@ -212,6 +223,7 @@ namespace Deucarian.BuildPipeline
 
         private void RefreshDiscovery()
         {
+            discoveryRefreshCount++;
             DeucarianBuildManagerDiscoveryResult discovery =
                 DeucarianBuildManagerDiscovery.Discover();
             providerEntries.Clear();
@@ -702,7 +714,55 @@ namespace Deucarian.BuildPipeline
 
         private void HandleProjectChanged()
         {
-            RefreshDiscovery();
+            projectChangeRefreshAt =
+                EditorApplication.timeSinceStartup + ProjectChangeDebounceSeconds;
+            if (projectChangeRefreshPending)
+            {
+                return;
+            }
+
+            projectChangeRefreshPending = true;
+            EditorApplication.update -= ProcessProjectChangeRefresh;
+            EditorApplication.update += ProcessProjectChangeRefresh;
+        }
+
+        private void ProcessProjectChangeRefresh()
+        {
+            if (!projectChangeRefreshPending
+                || EditorApplication.timeSinceStartup < projectChangeRefreshAt)
+            {
+                return;
+            }
+
+            CancelProjectChangeRefresh();
+            if (this != null)
+            {
+                RefreshDiscovery();
+            }
+        }
+
+        private void CancelProjectChangeRefresh()
+        {
+            projectChangeRefreshPending = false;
+            EditorApplication.update -= ProcessProjectChangeRefresh;
+        }
+
+        private void RemoveAnimatedAmbientLayer()
+        {
+            VisualElement ambientLayer = rootVisualElement.Q<VisualElement>(
+                DeucarianEditorAmbientGlass.AmbientLayerName);
+            ambientLayer?.RemoveFromHierarchy();
+        }
+
+        internal void QueueProjectChangeRefreshForTests()
+        {
+            HandleProjectChanged();
+        }
+
+        internal void FlushProjectChangeRefreshForTests()
+        {
+            projectChangeRefreshAt = double.MinValue;
+            ProcessProjectChangeRefresh();
         }
 
         private void OnSelectionChange()
