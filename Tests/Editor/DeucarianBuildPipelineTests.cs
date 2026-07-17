@@ -1,10 +1,12 @@
 using System;
+using System.Collections;
 using System.IO;
 using System.IO.Compression;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.Build.Profile;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Deucarian.BuildPipeline.Tests
 {
@@ -58,6 +60,82 @@ namespace Deucarian.BuildPipeline.Tests
             string serializedProfile = File.ReadAllText(TestProfilePath);
             StringAssert.Contains("webGLCompressionFormat: 2", serializedProfile);
             StringAssert.Contains("webWasm2023: 1", serializedProfile);
+        }
+
+        [Test]
+        public void PassiveValidationReadsTheProfileWithoutActivatingIt()
+        {
+            BuildProfile profile = DeucarianBuildProfileUtility.CreateProfile(
+                BuildTarget.WebGL,
+                TestProfilePath);
+            DeucarianWebGLBuildPolicy policy = new DeucarianWebGLBuildPolicy();
+            policy.ApplySettings(profile, DeucarianBuildEnvironment.Development);
+            BuildProfile activeBeforeValidation = BuildProfile.GetActiveBuildProfile();
+
+            DeucarianBuildValidationResult validation = policy.ValidateProfile(
+                profile,
+                DeucarianBuildEnvironment.Development);
+
+            Assert.That(validation.IsValid, Is.True, validation.Format("validation"));
+            Assert.That(
+                BuildProfile.GetActiveBuildProfile(),
+                Is.SameAs(activeBeforeValidation));
+            Assert.That(
+                DeucarianBuildProfileSettingsSnapshot.TryCreate(
+                    profile,
+                    out DeucarianBuildProfileSettingsSnapshot settings,
+                    out string issue),
+                Is.True,
+                issue);
+            Assert.That(
+                settings.TryGetInt("webGLCompressionFormat", out int compression),
+                Is.True);
+            Assert.That(compression, Is.EqualTo((int)WebGLCompressionFormat.Disabled));
+            Assert.That(
+                settings.TryGetSectionInt(
+                    "managedStrippingLevel",
+                    "WebGL",
+                    out int stripping),
+                Is.True);
+            Assert.That(stripping, Is.EqualTo((int)ManagedStrippingLevel.Minimal));
+        }
+
+        [UnityTest]
+        public IEnumerator PassiveValidationDoesNotRaiseProjectChanged()
+        {
+            BuildProfile profile = DeucarianBuildProfileUtility.CreateProfile(
+                BuildTarget.WebGL,
+                TestProfilePath);
+            DeucarianWebGLBuildPolicy policy = new DeucarianWebGLBuildPolicy();
+            policy.ApplySettings(profile, DeucarianBuildEnvironment.Development);
+
+            // Let changes caused by the explicit setup/apply operation drain before
+            // observing the passive validation call under test.
+            yield return null;
+            yield return null;
+
+            int projectChangedCount = 0;
+            Action onProjectChanged = () => projectChangedCount++;
+            EditorApplication.projectChanged += onProjectChanged;
+            DeucarianBuildValidationResult validation;
+            try
+            {
+                validation = policy.ValidateProfile(
+                    profile,
+                    DeucarianBuildEnvironment.Development);
+                yield return null;
+                yield return null;
+            }
+            finally
+            {
+                EditorApplication.projectChanged -= onProjectChanged;
+            }
+
+            Assert.That(validation.IsValid, Is.True, validation.Format("validation"));
+            Assert.That(
+                projectChangedCount,
+                Is.Zero,
+                "Passive validation must not queue another project refresh.");
         }
 
         [Test]
