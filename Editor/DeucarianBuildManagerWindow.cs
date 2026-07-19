@@ -11,7 +11,7 @@ namespace Deucarian.BuildPipeline
 {
     public sealed class DeucarianBuildManagerWindow : EditorWindow
     {
-        public const string MenuPath = DeucarianEditorUxStandards.MenuRoot + "/Build Pipeline";
+        public const string MenuPath = DeucarianEditorUxStandards.MenuRoot + "/Tools & Quality/Build Pipeline";
         public const string WindowTitle = "Build Pipeline Manager";
 
         internal const string CustomTargetKey = "__custom__";
