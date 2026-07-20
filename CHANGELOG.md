@@ -3,6 +3,9 @@
 ## Unreleased
 
 - Made passive Build Profile validation read the profile's serialized Player Settings override without switching Unity's active Build Profile, preventing refresh and recompilation loops while the manager is open.
+- Clarified the four Build Pipeline Manager actions in the window and documentation.
+- Kept the target selector and action buttons inside responsive toolbar lanes at narrow widths.
+- Updated the shared Editor dependency to 1.0.5 for the responsive command-bar contract.
 
 ## 0.2.2 - 2026-07-17
 
