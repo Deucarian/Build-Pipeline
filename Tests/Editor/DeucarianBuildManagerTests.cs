@@ -78,6 +78,27 @@ namespace Deucarian.BuildPipeline.Tests
                         .ClassListContains(
                             DeucarianEditorWorkbenchToolbar.EmphasizedActionClass),
                     Is.True);
+                VisualElement toolbar = window.WorkbenchForTests.Toolbar;
+                Assert.That(
+                    toolbar.ClassListContains(
+                        DeucarianEditorWorkbenchToolbar.StableActionLanesClass),
+                    Is.True);
+                VisualElement actionLane = toolbar.Q<VisualElement>(
+                    className: DeucarianEditorCommandBar.ActionGroupClass);
+                Assert.That(actionLane, Is.Not.Null);
+                Assert.That(
+                    actionLane.Children().OfType<Button>().Select(button => button.name),
+                    Is.EqualTo(new[]
+                    {
+                        DeucarianBuildManagerWindow.SyncButtonName,
+                        DeucarianBuildManagerWindow.ApplyButtonName,
+                        DeucarianBuildManagerWindow.ValidateButtonName,
+                        DeucarianBuildManagerWindow.BuildButtonName
+                    }));
+                Assert.That(
+                    window.rootVisualElement.Q<Button>(
+                        DeucarianBuildManagerWindow.SyncButtonName).text,
+                    Is.EqualTo("Sync Profiles"));
                 Assert.That(
                     window.rootVisualElement.Q<VisualElement>(
                         DeucarianBuildManagerWindow.ContentName),

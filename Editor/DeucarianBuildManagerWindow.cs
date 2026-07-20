@@ -143,6 +143,10 @@ namespace Deucarian.BuildPipeline
         private void BuildToolbar()
         {
             workbench.Toolbar.Clear();
+            workbench.Toolbar.AddToClassList(
+                DeucarianEditorWorkbenchToolbar.StableActionLanesClass);
+            DeucarianEditorCommandBarLanes lanes =
+                DeucarianEditorCommandBar.CreateLanes(workbench.Toolbar);
             if (targetLabels.Count == 0)
             {
                 targetLabels.Add(CustomTargetLabel);
@@ -156,21 +160,20 @@ namespace Deucarian.BuildPipeline
             targetPopup.style.minWidth = 260f;
             targetPopup.style.maxWidth = 360f;
             targetPopup.RegisterValueChangedCallback(HandleTargetChanged);
-            workbench.Toolbar.Add(targetPopup);
+            lanes.Leading.Add(targetPopup);
 
-            toolbarSummary = DeucarianEditorWorkbenchToolbar.CreateSummary(string.Empty);
+            toolbarSummary = lanes.Summary;
             toolbarSummary.name = "deucarian-build-pipeline-summary";
-            workbench.Toolbar.Add(toolbarSummary);
-            workbench.Toolbar.Add(DeucarianEditorWorkbenchToolbar.CreateSpacer());
 
             synchronizeButton = DeucarianEditorWorkbenchToolbar.CreateActionButton(
-                "Synchronize",
+                "Sync Profiles",
                 HandleSynchronize,
                 false);
             synchronizeButton.name = SyncButtonName;
             synchronizeButton.tooltip =
-                "Create or synchronize the selected project's version-controlled Build Profiles.";
-            workbench.Toolbar.Add(synchronizeButton);
+                "Create or refresh every Build Profile registered by this project. "
+                + "This changes version-controlled profile assets.";
+            AddToolbarAction(lanes.Trailing, synchronizeButton);
 
             applyButton = DeucarianEditorWorkbenchToolbar.CreateActionButton(
                 "Apply Policy",
@@ -178,8 +181,9 @@ namespace Deucarian.BuildPipeline
                 false);
             applyButton.name = ApplyButtonName;
             applyButton.tooltip =
-                "Explicitly apply the selected environment policy to the Build Profile.";
-            workbench.Toolbar.Add(applyButton);
+                "Update only the selected Build Profile with the environment's required settings. "
+                + "This changes the version-controlled profile asset.";
+            AddToolbarAction(lanes.Trailing, applyButton);
 
             validateButton = DeucarianEditorWorkbenchToolbar.CreateActionButton(
                 "Validate",
@@ -187,8 +191,8 @@ namespace Deucarian.BuildPipeline
                 false);
             validateButton.name = ValidateButtonName;
             validateButton.tooltip =
-                "Validate profile drift and project-specific preflight rules.";
-            workbench.Toolbar.Add(validateButton);
+                "Check profile settings and project preflight rules without changing assets.";
+            AddToolbarAction(lanes.Trailing, validateButton);
 
             buildButton = DeucarianEditorWorkbenchToolbar.CreateActionButton(
                 "Build",
@@ -196,8 +200,15 @@ namespace Deucarian.BuildPipeline
                 true);
             buildButton.name = BuildButtonName;
             buildButton.tooltip =
-                "Run the selected workflow after validation succeeds.";
-            workbench.Toolbar.Add(buildButton);
+                "Validate, then run the selected workflow and write to the displayed output folder.";
+            AddToolbarAction(lanes.Trailing, buildButton);
+        }
+
+        private static void AddToolbarAction(VisualElement actionLane, Button button)
+        {
+            button.style.flexGrow = 1f;
+            button.style.flexShrink = 1f;
+            actionLane.Add(button);
         }
 
         private void BuildFooter()
@@ -277,6 +288,7 @@ namespace Deucarian.BuildPipeline
             try
             {
                 DrawConfigurationPanel();
+                DrawActionGuidePanel();
                 DrawValidationPanel();
                 DrawLastBuildPanel();
                 DrawDiscoveryIssues();
@@ -326,6 +338,25 @@ namespace Deucarian.BuildPipeline
                         ValidateCurrent(false);
                     }
                 }
+            });
+        }
+
+        private static void DrawActionGuidePanel()
+        {
+            DeucarianEditorWorkbenchGUI.DrawPanel("Actions", () =>
+            {
+                EditorGUILayout.LabelField(
+                    "For a normal build: Validate, then Build.",
+                    EditorStyles.boldLabel);
+                EditorGUILayout.HelpBox(
+                    "Sync Profiles — Create or refresh all profiles registered by the project; "
+                    + "changes profile assets.\n"
+                    + "Apply Policy — Update only the selected profile's environment settings; "
+                    + "changes that profile asset.\n"
+                    + "Validate — Check profile settings and project preflight without changing "
+                    + "anything.\n"
+                    + "Build — Validate, then create the build in the displayed output folder.",
+                    MessageType.None);
             });
         }
 
@@ -439,9 +470,9 @@ namespace Deucarian.BuildPipeline
             }
 
             if (!EditorUtility.DisplayDialog(
-                    "Synchronize Build Profiles",
+                    "Sync Build Profiles",
                     "This explicitly updates project-owned Build Profile assets. Review and commit their diffs.",
-                    "Synchronize",
+                    "Sync Profiles",
                     "Cancel"))
             {
                 return;
