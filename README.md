@@ -12,7 +12,7 @@ Reference the release tag in `Packages/manifest.json`:
 "com.deucarian.build-pipeline": "https://github.com/Deucarian/Build-Pipeline.git#v0.2.2"
 ```
 
-Unity 6.0 or newer is required. The package contains Editor assemblies only and contributes nothing to a player build. It depends directly on `com.deucarian.editor` 1.0.3 and `com.deucarian.logging` 1.0.2.
+Unity 6.0 or newer is required. The package contains Editor assemblies only and contributes nothing to a player build. It depends directly on `com.deucarian.editor` 1.0.5 and `com.deucarian.logging` 1.0.2.
 
 ## Build Pipeline Manager
 
@@ -20,7 +20,16 @@ Open `Tools > Deucarian > Build Pipeline`. The manager discovers project provide
 
 The manager also includes a `Custom Build Profile` mode. Select a profile, environment, and project-relative output path to apply a policy explicitly, validate it, or build directly through `DeucarianBuildRunner`.
 
-Profile changes are always explicit. Synchronize and Apply Policy ask for confirmation because they modify version-controlled Build Profile assets. Ordinary validation and build actions do not silently edit profiles.
+Profile changes are always explicit. Sync Profiles and Apply Policy ask for confirmation because they modify version-controlled Build Profile assets. Ordinary validation and build actions do not silently edit profiles.
+
+The manager distinguishes the four actions directly in the window:
+
+- **Sync Profiles** creates or refreshes every profile registered by the selected project provider.
+- **Apply Policy** updates only the selected profile with its environment policy.
+- **Validate** checks policy drift and project preflight rules without changing assets.
+- **Build** validates and then runs the selected build workflow.
+
+The first two actions modify version-controlled profile assets. The normal build path is Validate, then Build.
 
 ## Project provider API
 
