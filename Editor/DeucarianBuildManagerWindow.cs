@@ -90,6 +90,19 @@ namespace Deucarian.BuildPipeline
             window.Focus();
         }
 
+        internal static void OpenWindowForEntry(
+            DeucarianBuildManagerProviderEntry entry)
+        {
+            if (entry == null)
+            {
+                OpenWindow();
+                return;
+            }
+
+            SessionState.SetString(SelectedTargetSessionKey, entry.Key);
+            OpenWindow();
+        }
+
         private void OnEnable()
         {
             minSize = new Vector2(640f, 440f);
@@ -113,6 +126,11 @@ namespace Deucarian.BuildPipeline
             applyButton = null;
             validateButton = null;
             buildButton = null;
+        }
+
+        private void OnFocus()
+        {
+            AlignSelectionWithActiveProfile();
         }
 
         public void CreateGUI()
@@ -282,6 +300,40 @@ namespace Deucarian.BuildPipeline
             Repaint();
         }
 
+        private void AlignSelectionWithActiveProfile()
+        {
+            BuildProfile activeProfile = BuildProfile.GetActiveBuildProfile();
+            string activePath = activeProfile != null
+                ? AssetDatabase.GetAssetPath(activeProfile)
+                : string.Empty;
+            if (string.IsNullOrWhiteSpace(activePath))
+            {
+                return;
+            }
+
+            for (int i = 0; i < providerEntries.Count; i++)
+            {
+                DeucarianBuildManagerProviderEntry entry = providerEntries[i];
+                if (!string.Equals(
+                        activePath.Replace('\\', '/'),
+                        entry.Target.BuildProfileAssetPath.Replace('\\', '/'),
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                selectedTargetKey = entry.Key;
+                SessionState.SetString(SelectedTargetSessionKey, selectedTargetKey);
+                if (targetPopup != null)
+                {
+                    targetPopup.SetValueWithoutNotify(entry.Label);
+                }
+
+                ValidateCurrent(false);
+                return;
+            }
+        }
+
         private void DrawContent()
         {
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
@@ -373,6 +425,12 @@ namespace Deucarian.BuildPipeline
                     {
                         Selection.activeObject = profile;
                         EditorGUIUtility.PingObject(profile);
+                    }
+
+                    if (GUILayout.Button("Open in Unity", GUILayout.Width(104f)))
+                    {
+                        BuildProfile.SetActiveBuildProfile(profile);
+                        BuildPlayerWindow.ShowBuildPlayerWindow();
                     }
                 }
             }
@@ -882,7 +940,9 @@ namespace Deucarian.BuildPipeline
             string customBuildOutputPath)
         {
             return entry != null
-                ? entry.Target.BuildAction()
+                ? DeucarianBuildDispatcher.BuildDefault(
+                    entry.Target,
+                    DeucarianBuildInvocationSource.BuildPipelineManager)
                 : DeucarianBuildRunner.Build(new DeucarianBuildRequest(
                     customBuildProfile,
                     customBuildEnvironment,

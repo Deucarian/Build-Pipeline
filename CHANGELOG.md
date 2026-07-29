@@ -1,7 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 - 2026-07-29
 
+- Integrated registered workflows with Unity's native Build and Build And Run buttons.
+- Added invocation-aware project callbacks that preserve Unity-selected outputs and options.
+- Added a managed-profile guard that blocks direct BuildPipeline calls from bypassing Deucarian.
+- Added one-time native-build guidance and manager-to-Unity Build Profile navigation.
+- Stopped development policy from forcing Auto Run so the initiating build action owns launch behavior.
 - Made passive Build Profile validation read the profile's serialized Player Settings override without switching Unity's active Build Profile, preventing refresh and recompilation loops while the manager is open.
 - Clarified the four Build Pipeline Manager actions in the window and documentation.
 - Kept the target selector and action buttons inside responsive toolbar lanes at narrow widths.

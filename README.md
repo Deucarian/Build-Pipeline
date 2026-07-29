@@ -2,14 +2,14 @@
 
 `com.deucarian.build-pipeline` is an editor-only Unity package for repeatable development and production builds. It keeps Build Profiles project-owned while centralizing the settings that should be consistent across Deucarian projects.
 
-Version 0.2.2 provides a single provider-driven Build Pipeline Manager with a static idle surface and debounced project-change validation. The public policy and provider interfaces are platform-neutral so Windows, Android, and iOS policies can be added without redesigning project integrations.
+Version 0.3.0 provides a single provider-driven Build Pipeline Manager with a static idle surface and debounced project-change validation. Registered Build Profiles also route Unity's native Build and Build And Run buttons through the same project callback. The public policy and provider interfaces are platform-neutral so Windows, Android, and iOS policies can be added without redesigning project integrations.
 
 ## Install
 
 Reference the release tag in `Packages/manifest.json`:
 
 ```json
-"com.deucarian.build-pipeline": "https://github.com/Deucarian/Build-Pipeline.git#v0.2.2"
+"com.deucarian.build-pipeline": "https://github.com/Deucarian/Build-Pipeline.git#v0.3.0"
 ```
 
 Unity 6.0 or newer is required. The package contains Editor assemblies only and contributes nothing to a player build. It depends directly on `com.deucarian.editor` 1.0.5 and `com.deucarian.logging` 1.0.2.
@@ -17,6 +17,17 @@ Unity 6.0 or newer is required. The package contains Editor assemblies only and 
 ## Build Pipeline Manager
 
 Open `Tools > Deucarian > Build Pipeline`. The manager discovers project providers through Unity `TypeCache`, presents their registered workflows, validates profile drift and project preflight rules, and dispatches builds through project-owned callbacks.
+
+Registered workflows also integrate with Unity's native `File > Build Profiles` window.
+When a registered profile is active, Unity's **Build** and **Build And Run** buttons
+dispatch through the same project callback as the manager. The selected output path and
+build options are preserved, while Deucarian policy validation, project preparation,
+manifest generation, and artifact validation remain active. A one-time notice explains
+the integration; unrelated profiles continue through Unity's default build behavior.
+
+Use **Open in Unity** beside a registered profile to activate it and open Unity's Build
+Profiles window. Direct `BuildPipeline.BuildPlayer` calls for an active registered profile
+are rejected unless they run through `DeucarianBuildRunner`.
 
 The manager also includes a `Custom Build Profile` mode. Select a profile, environment, and project-relative output path to apply a policy explicitly, validate it, or build directly through `DeucarianBuildRunner`.
 
@@ -40,20 +51,25 @@ Each registered target provides:
 - A stable target ID, label, and generic description.
 - A project-owned Build Profile asset path.
 - An environment and project-relative output path.
+- Optional default `BuildOptions` used by the manager and programmatic default builds.
 - An optional side-effect-free project validation callback.
-- A build callback returning `DeucarianBuildResult`.
+- An invocation-aware build callback returning `DeucarianBuildResult`.
 
-The callback owns project preflight, temporary state, output cleanup, and artifact validation. The manager never bypasses it.
+The callback receives a `DeucarianBuildInvocation` containing the selected Build Profile,
+output path, additional options, and invocation source. It owns project preflight,
+temporary state, output cleanup, and project artifact validation. The manager and Unity
+native bridge never bypass it.
 
 ## Core API
 
 - `DeucarianBuildEnvironment`: `Development` or `Production`.
 - `DeucarianBuildRequest`: Build Profile, environment, output path, and additional build options.
+- `DeucarianBuildDispatcher`: validates and invokes registered targets consistently from the manager, Unity Build Profiles, CI, or project code.
 - `IDeucarianPlatformBuildPolicy`: applies settings, detects drift, and validates generated artifacts.
 - `DeucarianBuildRunner.Build(request)`: validates and calls `BuildPipeline.BuildPlayer(BuildPlayerWithProfileOptions)`.
 - `DeucarianBuildArtifactManifest`: artifact paths and encoded/raw sizes, versions, build GUID, duration, settings fingerprint, and budget result.
 
-The WebGL policy maps development to an inspectable, auto-running build and production to Brotli, hashed filenames, data caching, High managed stripping, size-optimized IL2CPP, engine stripping, and WebAssembly 2023. It leaves scenes, memory, rendering and quality assets, templates, identifiers, icons, and runtime content-loading behavior project-owned.
+The WebGL policy maps development to an inspectable build and production to Brotli, hashed filenames, data caching, High managed stripping, size-optimized IL2CPP, engine stripping, and WebAssembly 2023. Build And Run supplies `AutoRunPlayer` through its invocation instead of making every development build launch automatically. The policy leaves scenes, memory, rendering and quality assets, templates, identifiers, icons, and runtime content-loading behavior project-owned.
 
 ## Command line
 

@@ -41,6 +41,17 @@ namespace Deucarian.BuildPipeline.Tests
         }
 
         [Test]
+        public void DevelopmentPolicyDoesNotForceBuildAndRun()
+        {
+            BuildOptions options = new DeucarianWebGLBuildPolicy()
+                .GetRequiredBuildOptions(DeucarianBuildEnvironment.Development);
+
+            Assert.That((options & BuildOptions.Development) != 0, Is.True);
+            Assert.That((options & BuildOptions.DetailedBuildReport) != 0, Is.True);
+            Assert.That((options & BuildOptions.AutoRunPlayer) == 0, Is.True);
+        }
+
+        [Test]
         public void SynchronizationAppliesPolicyAndOppositeEnvironmentDetectsDrift()
         {
             BuildProfile profile = DeucarianBuildProfileUtility.CreateProfile(
