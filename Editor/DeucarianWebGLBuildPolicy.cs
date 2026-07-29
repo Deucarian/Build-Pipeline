@@ -228,7 +228,7 @@ namespace Deucarian.BuildPipeline
         internal BuildOptions GetRequiredBuildOptions(DeucarianBuildEnvironment environment)
         {
             return environment == DeucarianBuildEnvironment.Development
-                ? BuildOptions.Development | BuildOptions.AutoRunPlayer | BuildOptions.DetailedBuildReport
+                ? BuildOptions.Development | BuildOptions.DetailedBuildReport
                 : BuildOptions.StrictMode | BuildOptions.DetailedBuildReport;
         }
 

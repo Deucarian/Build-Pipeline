@@ -39,13 +39,17 @@ namespace Deucarian.BuildPipeline
             }
 
             ValidateBuildOptions(request.Environment, options);
-            BuildReport report = UnityEditor.BuildPipeline.BuildPlayer(
-                new BuildPlayerWithProfileOptions
-                {
-                    buildProfile = request.BuildProfile,
-                    locationPathName = request.OutputPath,
-                    options = options
-                });
+            BuildReport report;
+            using (DeucarianBuildExecutionScope.Enter())
+            {
+                report = UnityEditor.BuildPipeline.BuildPlayer(
+                    new BuildPlayerWithProfileOptions
+                    {
+                        buildProfile = request.BuildProfile,
+                        locationPathName = request.OutputPath,
+                        options = options
+                    });
+            }
             if (report.summary.result != BuildResult.Succeeded)
             {
                 throw new BuildFailedException(

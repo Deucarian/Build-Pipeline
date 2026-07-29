@@ -2,6 +2,9 @@
 
 Package ID: `com.deucarian.build-pipeline`
 
+Canonical architecture standard:
+https://github.com/Deucarian/Package-Registry/blob/main/ARCHITECTURE.md
+
 ## Ownership
 
 This package owns editor-only Build Profile policies, build execution, artifact manifests, provider contracts, and the Build Pipeline Manager.
