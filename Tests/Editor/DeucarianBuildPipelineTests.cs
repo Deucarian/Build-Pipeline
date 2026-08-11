@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Build.Profile;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -163,6 +164,50 @@ namespace Deucarian.BuildPipeline.Tests
                         profile,
                         DeucarianBuildEnvironment.Development,
                         string.Empty)));
+        }
+
+        [Test]
+        public void ActiveBuildTargetMustMatchTheRequestedProfile()
+        {
+            BuildProfile profile = DeucarianBuildProfileUtility.CreateProfile(
+                BuildTarget.WebGL,
+                TestProfilePath);
+
+            Assert.DoesNotThrow(() =>
+                DeucarianBuildRunner.ValidateActiveBuildTarget(
+                    profile,
+                    BuildTarget.WebGL));
+
+            BuildFailedException exception = Assert.Throws<BuildFailedException>(() =>
+                DeucarianBuildRunner.ValidateActiveBuildTarget(
+                    profile,
+                    BuildTarget.StandaloneWindows64));
+            Assert.That(exception.Message, Does.Contain("StandaloneWindows64"));
+            Assert.That(exception.Message, Does.Contain("WebGL"));
+            Assert.That(exception.Message, Does.Contain(TestProfilePath));
+            Assert.That(exception.Message, Does.Contain("-activeBuildProfile"));
+            Assert.That(exception.Message, Does.Contain("-buildTarget WebGL"));
+        }
+
+        [Test]
+        public void CommandLineProfileArgumentsCannotSelectDifferentAssets()
+        {
+            Assert.DoesNotThrow(() =>
+                DeucarianBuildCommandLine.ValidateProfileArguments(
+                    TestProfilePath,
+                    TestProfilePath.Replace('/', '\\')));
+            Assert.DoesNotThrow(() =>
+                DeucarianBuildCommandLine.ValidateProfileArguments(
+                    TestProfilePath,
+                    null));
+
+            ArgumentException exception = Assert.Throws<ArgumentException>(() =>
+                DeucarianBuildCommandLine.ValidateProfileArguments(
+                    TestProfilePath,
+                    TestFolder + "/Different WebGL.asset"));
+            Assert.That(exception.Message, Does.Contain("-activeBuildProfile"));
+            Assert.That(exception.Message, Does.Contain("-deucarianProfile"));
+            Assert.That(exception.Message, Does.Contain("same Build Profile"));
         }
 
         [Test]

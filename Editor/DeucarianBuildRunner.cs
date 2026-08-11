@@ -12,6 +12,9 @@ namespace Deucarian.BuildPipeline
         public static DeucarianBuildResult Build(DeucarianBuildRequest request)
         {
             ValidateRequest(request);
+            ValidateActiveBuildTarget(
+                request.BuildProfile,
+                EditorUserBuildSettings.activeBuildTarget);
             IDeucarianPlatformBuildPolicy policy = GetPolicy(request.BuildProfile);
             DeucarianBuildValidationResult profileValidation = policy.ValidateProfile(
                 request.BuildProfile,
@@ -127,6 +130,44 @@ namespace Deucarian.BuildPipeline
                     "The build output resolves to a file instead of a directory.",
                     nameof(request));
             }
+        }
+
+        internal static void ValidateActiveBuildTarget(
+            BuildProfile profile,
+            BuildTarget activeTarget)
+        {
+            if (profile == null)
+            {
+                throw new ArgumentNullException(nameof(profile));
+            }
+
+            BuildTarget expectedTarget = DeucarianBuildProfileUtility.GetTarget(profile);
+            if (activeTarget == expectedTarget)
+            {
+                return;
+            }
+
+            string profilePath = AssetDatabase.GetAssetPath(profile);
+            string profileDisplay = string.IsNullOrWhiteSpace(profilePath)
+                ? profile.name
+                : profilePath;
+            string activeProfileArgument = string.IsNullOrWhiteSpace(profilePath)
+                ? "-activeBuildProfile \"<Build Profile asset path>\""
+                : "-activeBuildProfile \"" + profilePath + "\"";
+            throw new BuildFailedException(
+                "The active build target is "
+                + activeTarget
+                + ", but Build Profile '"
+                + profileDisplay
+                + "' targets "
+                + expectedTarget
+                + ". Unity compiles target-specific code before this build method runs, "
+                + "so the target cannot be switched safely here. Activate the requested Build Profile "
+                + "and wait for compilation to finish. For command-line builds, start Unity with "
+                + activeProfileArgument
+                + " (preferred), or -buildTarget "
+                + expectedTarget
+                + ".");
         }
 
         private static void ValidateBuildOptions(

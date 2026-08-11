@@ -1,8 +1,8 @@
 {
   "name": "com.deucarian.build-pipeline",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "displayName": "Deucarian Build Pipeline",
-  "description": "Editor-only Build Profile policies, validation, artifact manifests, and CI entry points for Deucarian Unity projects.",
+  "description": "Editor-only Build Profile policies, validation, Newtonsoft contract preservation, artifact manifests, and CI entry points for Deucarian Unity projects.",
   "unity": "6000.0",
   "keywords": [
     "build",
@@ -20,7 +20,8 @@
   "license": "MIT",
   "dependencies": {
     "com.deucarian.editor": "1.0.5",
-    "com.deucarian.logging": "1.0.2"
+    "com.deucarian.logging": "1.0.2",
+    "com.unity.nuget.mono-cecil": "1.11.5"
   },
   "hideInEditor": false
 }
