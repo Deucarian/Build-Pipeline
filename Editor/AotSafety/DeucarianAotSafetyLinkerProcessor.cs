@@ -43,7 +43,8 @@ namespace Deucarian.BuildPipeline
             DeucarianAotSafetySettings settings =
                 DeucarianAotSafetySettings.Load();
             DeucarianAotSafetyMode mode =
-                DeucarianBuildExecutionScope.CurrentAotSafetyMode
+                DeucarianAotSafetyBuildState.CurrentMode
+                ?? DeucarianBuildExecutionScope.CurrentAotSafetyMode
                 ?? DeucarianAotSafetyMode.Audit;
             BuildFile[] files = report.GetFiles();
             string[] playerAssemblyPaths = GetPlayerAssemblyPaths(files);
