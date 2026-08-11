@@ -15,7 +15,8 @@
   ],
   "requiredDependencies": [
     "com.deucarian.editor",
-    "com.deucarian.logging"
+    "com.deucarian.logging",
+    "com.unity.nuget.mono-cecil"
   ],
   "optionalVersionDefinedDependencies": [],
   "allowedDirectDebugCalls": [],

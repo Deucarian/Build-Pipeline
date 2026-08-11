@@ -7,7 +7,7 @@ https://github.com/Deucarian/Package-Registry/blob/main/ARCHITECTURE.md
 
 ## Ownership
 
-This package owns editor-only Build Profile policies, build execution, artifact manifests, provider contracts, and the Build Pipeline Manager.
+This package owns editor-only Build Profile policies, build execution, managed-linker preservation policies, artifact manifests, provider contracts, and the Build Pipeline Manager.
 
 Registered capability: `build-pipeline`.
 

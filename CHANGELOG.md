@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 - 2026-08-11
+
+- Added target-aware Newtonsoft.Json and data-contract discovery for the exact player script assemblies reported by Unity, including inherited member contracts and safe dependency resolution.
+- Added deterministic generated linker descriptors that preserve marked JSON contracts under High managed stripping.
+- Made discovery and descriptor generation fail closed when reflection safety cannot be guaranteed.
+- Added a fail-fast active-target check and documented `-activeBuildProfile` startup usage for reliable clean command-line builds.
+- Added Mono.Cecil-based coverage for attributes, referenced converters, nested and generic contracts, resolver boundaries, deterministic XML, and invalid linker input.
+
 ## 0.3.0 - 2026-07-29
 
 - Integrated registered workflows with Unity's native Build and Build And Run buttons.
