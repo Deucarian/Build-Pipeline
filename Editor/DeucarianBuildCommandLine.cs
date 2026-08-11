@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using UnityEditor;
 using UnityEditor.Build.Profile;
 
@@ -10,6 +11,9 @@ namespace Deucarian.BuildPipeline
         {
             string[] args = Environment.GetCommandLineArgs();
             string profilePath = RequireValue(args, "-deucarianProfile");
+            ValidateProfileArguments(
+                profilePath,
+                GetValue(args, "-activeBuildProfile"));
             string environmentValue = RequireValue(args, "-deucarianEnvironment");
             string outputPath = RequireValue(args, "-deucarianOutput");
 
@@ -52,6 +56,33 @@ namespace Deucarian.BuildPipeline
                     additionalOptions));
         }
 
+        internal static void ValidateProfileArguments(
+            string profilePath,
+            string activeProfilePath)
+        {
+            if (string.IsNullOrWhiteSpace(activeProfilePath))
+            {
+                return;
+            }
+
+            string requested = NormalizeAssetPath(profilePath);
+            string active = NormalizeAssetPath(activeProfilePath);
+            StringComparison comparison = Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            if (string.Equals(requested, active, comparison))
+            {
+                return;
+            }
+
+            throw new ArgumentException(
+                "-activeBuildProfile ('"
+                + activeProfilePath
+                + "') and -deucarianProfile ('"
+                + profilePath
+                + "') must reference the same Build Profile asset.");
+        }
+
         private static string RequireValue(string[] args, string key)
         {
             string value = GetValue(args, key);
@@ -74,6 +105,11 @@ namespace Deucarian.BuildPipeline
             }
 
             return null;
+        }
+
+        private static string NormalizeAssetPath(string path)
+        {
+            return (path ?? string.Empty).Trim().Replace('\\', '/');
         }
     }
 }

@@ -2,17 +2,17 @@
 
 `com.deucarian.build-pipeline` is an editor-only Unity package for repeatable development and production builds. It keeps Build Profiles project-owned while centralizing the settings that should be consistent across Deucarian projects.
 
-Version 0.3.0 provides a single provider-driven Build Pipeline Manager with a static idle surface and debounced project-change validation. Registered Build Profiles also route Unity's native Build and Build And Run buttons through the same project callback. The public policy and provider interfaces are platform-neutral so Windows, Android, and iOS policies can be added without redesigning project integrations.
+Version 0.4.0 provides a single provider-driven Build Pipeline Manager with a static idle surface and debounced project-change validation. Registered Build Profiles also route Unity's native Build and Build And Run buttons through the same project callback. Target-specific Newtonsoft.Json contracts are preserved automatically when managed stripping runs. The public policy and provider interfaces are platform-neutral so Windows, Android, and iOS policies can be added without redesigning project integrations.
 
 ## Install
 
 Reference the release tag in `Packages/manifest.json`:
 
 ```json
-"com.deucarian.build-pipeline": "https://github.com/Deucarian/Build-Pipeline.git#v0.3.0"
+"com.deucarian.build-pipeline": "https://github.com/Deucarian/Build-Pipeline.git#v0.4.0"
 ```
 
-Unity 6.0 or newer is required. The package contains Editor assemblies only and contributes nothing to a player build. It depends directly on `com.deucarian.editor` 1.0.5 and `com.deucarian.logging` 1.0.2.
+Unity 6.0 or newer is required. The package contains Editor assemblies only and contributes nothing to a player build. It depends directly on `com.deucarian.editor` 1.0.5, `com.deucarian.logging` 1.0.2, and Unity's Editor-only `com.unity.nuget.mono-cecil` package.
 
 ## Build Pipeline Manager
 
@@ -71,17 +71,26 @@ native bridge never bypass it.
 
 The WebGL policy maps development to an inspectable build and production to Brotli, hashed filenames, data caching, High managed stripping, size-optimized IL2CPP, engine stripping, and WebAssembly 2023. Build And Run supplies `AutoRunPlayer` through its invocation instead of making every development build launch automatically. The policy leaves scenes, memory, rendering and quality assets, templates, identifiers, icons, and runtime content-loading behavior project-owned.
 
+## Newtonsoft.Json and managed stripping
+
+Before Unity's managed linker runs, the package inspects the exact target player assemblies with Mono.Cecil. Types carrying Newtonsoft.Json serialization attributes, supported `System.Runtime.Serialization` contract attributes, and types referenced by those attributes are written to a deterministic descriptor under `Library/Deucarian/BuildPipeline/NewtonsoftLinker`. Each discovered contract uses `preserve="all"`, protecting constructors, accessors, fields, callbacks, and converters used through reflection. Missing or unreadable linker input stops the build instead of producing a potentially broken player.
+
+Automatic discovery is annotation-driven: every application POCO serialized or deserialized through Newtonsoft.Json must declare `[JsonObject]` or at least one Newtonsoft serialization attribute. Compiled code does not expose enough information to infer arbitrary objects passed dynamically to Json.NET. The scan covers target script assemblies that Unity classifies as `ManagedLibrary`; precompiled dependency contracts, unannotated contracts, and dynamic contracts still require their package or project to provide an explicit `link.xml` rule. An installed project that does not use Newtonsoft.Json produces a valid empty linker descriptor.
+
 ## Command line
 
 The command-line API remains stable:
 
 ```text
 -batchmode -quit \
+-activeBuildProfile "Assets/Settings/Build Profiles/Web Production.asset" \
 -executeMethod Deucarian.BuildPipeline.DeucarianBuildCommandLine.Build \
 -deucarianProfile "Assets/Settings/Build Profiles/Web Production.asset" \
 -deucarianEnvironment Production \
 -deucarianOutput "Builds/WebGL/Production"
 ```
+
+`-activeBuildProfile` is a Unity startup argument: it selects the target and profile-specific scripting defines before package and project scripts compile. `-deucarianProfile` tells this package which profile to validate and build, so both arguments must name the same asset. A target-only `-buildTarget WebGL` is a valid fallback, but `-activeBuildProfile` is the canonical Unity 6 invocation. The runner also rejects target mismatches with this guidance before starting a build.
 
 Optional `-deucarianOptions` accepts a comma-separated list of `BuildOptions` names. Environment-required options are added by the runner.
 
