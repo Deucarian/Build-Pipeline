@@ -19,21 +19,26 @@ namespace Deucarian.BuildPipeline
         public DeucarianBuildEnvironment Environment { get; set; }
         public string OutputPath { get; set; }
         public BuildOptions AdditionalBuildOptions { get; set; }
+        public DeucarianAotSafetyMode AotSafetyMode { get; set; }
 
         public DeucarianBuildRequest()
         {
+            AotSafetyMode = DeucarianAotSafetyMode.Inherit;
         }
 
         public DeucarianBuildRequest(
             BuildProfile buildProfile,
             DeucarianBuildEnvironment environment,
             string outputPath,
-            BuildOptions additionalBuildOptions = BuildOptions.None)
+            BuildOptions additionalBuildOptions = BuildOptions.None,
+            DeucarianAotSafetyMode aotSafetyMode =
+                DeucarianAotSafetyMode.Inherit)
         {
             BuildProfile = buildProfile;
             Environment = environment;
             OutputPath = outputPath;
             AdditionalBuildOptions = additionalBuildOptions;
+            AotSafetyMode = aotSafetyMode;
         }
     }
 
