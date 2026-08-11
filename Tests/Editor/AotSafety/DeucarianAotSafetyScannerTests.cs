@@ -66,7 +66,54 @@ namespace Deucarian.BuildPipeline.Tests
         }
 
         [Test]
-        public void Scan_AllowsExactDocumentedException()
+        public void Scan_AllowsExactDeclaredAndPreservedException()
+        {
+            using (CecilAssemblyFixture fixture =
+                   new CecilAssemblyFixture(
+                       "Vendor.Integration",
+                       referencesNewtonsoft: false))
+            {
+                TypeDefinition type = fixture.AddType("Vendor", "Factory");
+                MethodInfo createInstance = typeof(Activator).GetMethod(
+                    "CreateInstance",
+                    new[] { typeof(Type) });
+                AddCall(fixture.Module, type, createInstance, "Create");
+                string path = fixture.Write();
+                DeucarianAotSafetySettings settings =
+                    new DeucarianAotSafetySettings();
+                DeucarianAotSafetyException exception =
+                    new DeucarianAotSafetyException
+                    {
+                        assemblyName = "Vendor.Integration",
+                        declaringType = "Vendor.Factory",
+                        method = "Create",
+                        calledApi = "System.Activator::CreateInstance",
+                        strategy = "Declared",
+                        reason = "Vendor SDK compatibility boundary."
+                    };
+                exception.preserveTypes.Add(new DeucarianAotPreserveType
+                {
+                    assemblyName = "Vendor.Integration",
+                    typeName = "Vendor.Factory",
+                    reason = "Created through the vendor compatibility boundary."
+                });
+                settings.exceptions.Add(exception);
+
+                DeucarianAotSafetyReport report =
+                    DeucarianAotSafetyScanner.Scan(
+                        new[] { path },
+                        new[] { fixture.DirectoryPath },
+                        settings,
+                        DeucarianAotSafetyMode.Enforce);
+
+                Assert.That(report.passed, Is.True);
+                Assert.That(report.declaredExceptionCount, Is.EqualTo(1));
+                Assert.That(report.findings, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void Scan_RejectsExceptionWithoutADeclaredStrategy()
         {
             using (CecilAssemblyFixture fixture =
                    new CecilAssemblyFixture(
@@ -87,7 +134,7 @@ namespace Deucarian.BuildPipeline.Tests
                     declaringType = "Vendor.Factory",
                     method = "Create",
                     calledApi = "System.Activator::CreateInstance",
-                    reason = "Vendor SDK compatibility boundary."
+                    reason = "Incomplete exception."
                 });
 
                 DeucarianAotSafetyReport report =
@@ -97,9 +144,12 @@ namespace Deucarian.BuildPipeline.Tests
                         settings,
                         DeucarianAotSafetyMode.Enforce);
 
-                Assert.That(report.passed, Is.True);
-                Assert.That(report.declaredExceptionCount, Is.EqualTo(1));
-                Assert.That(report.findings, Is.Empty);
+                Assert.That(report.passed, Is.False);
+                Assert.That(report.declaredExceptionCount, Is.Zero);
+                Assert.That(
+                    report.findings.Any(finding =>
+                        finding.category == "DynamicConstruction"),
+                    Is.True);
             }
         }
 
