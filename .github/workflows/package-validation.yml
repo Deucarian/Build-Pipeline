@@ -10,6 +10,7 @@ on:
 jobs:
   validate:
     name: Shared package validation
-    uses: Deucarian/Package-Registry/.github/workflows/deucarian-package-validation.yml@develop
+    uses: Deucarian/Package-Registry/.github/workflows/deucarian-package-validation.yml@feature/aot-safety-governance
     with:
       package-config: deucarian-package.json
+      registry-ref: feature/aot-safety-governance
