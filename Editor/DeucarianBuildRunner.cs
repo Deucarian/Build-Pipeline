@@ -44,9 +44,11 @@ namespace Deucarian.BuildPipeline
             ValidateBuildOptions(request.Environment, options);
             DeucarianAotSafetySettings aotSettings =
                 DeucarianAotSafetySettings.Load();
+            DeucarianAotSafetyMode requestedAotMode =
+                ResolveRequestedAotMode(request.AotSafetyMode);
             DeucarianAotSafetyMode aotMode = aotSettings.ResolveMode(
                 request.Environment,
-                request.AotSafetyMode);
+                requestedAotMode);
             DeucarianAotSafetyReport projectAotReport =
                 DeucarianAotSafetyProjectInspector.Inspect(
                     aotSettings,
@@ -160,6 +162,21 @@ namespace Deucarian.BuildPipeline
             {
                 throw new BuildFailedException(validation.Format("Profile synchronization failed"));
             }
+        }
+
+        private static DeucarianAotSafetyMode ResolveRequestedAotMode(
+            DeucarianAotSafetyMode requestMode)
+        {
+            if (requestMode != DeucarianAotSafetyMode.Inherit)
+            {
+                return requestMode;
+            }
+
+            DeucarianAotSafetyMode? invocationMode =
+                DeucarianBuildInvocationScope.CurrentAotSafetyMode;
+            return invocationMode.HasValue
+                ? invocationMode.Value
+                : DeucarianAotSafetyMode.Inherit;
         }
 
         private static void ValidateRequest(DeucarianBuildRequest request)
