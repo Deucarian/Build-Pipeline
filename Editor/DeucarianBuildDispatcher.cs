@@ -32,8 +32,13 @@ namespace Deucarian.BuildPipeline
                     validation.Format("Registered Deucarian build validation failed"));
             }
 
-            DeucarianBuildResult result =
-                target.InvocationBuildAction(invocation);
+            DeucarianBuildResult result;
+            using (DeucarianBuildInvocationScope.Enter(
+                       invocation.AotSafetyMode))
+            {
+                result = target.InvocationBuildAction(invocation);
+            }
+
             if (result == null)
             {
                 throw new BuildFailedException(
@@ -46,7 +51,9 @@ namespace Deucarian.BuildPipeline
         public static DeucarianBuildResult BuildDefault(
             DeucarianBuildManagerTarget target,
             DeucarianBuildInvocationSource source =
-                DeucarianBuildInvocationSource.Programmatic)
+                DeucarianBuildInvocationSource.Programmatic,
+            DeucarianAotSafetyMode aotSafetyMode =
+                DeucarianAotSafetyMode.Inherit)
         {
             if (target == null)
             {
@@ -68,7 +75,8 @@ namespace Deucarian.BuildPipeline
                     profile,
                     target.OutputPath,
                     target.DefaultBuildOptions,
-                    source));
+                    source,
+                    aotSafetyMode));
         }
 
         internal static DeucarianBuildValidationResult Validate(
