@@ -33,7 +33,10 @@ namespace Deucarian.BuildPipeline
         public bool passed = true;
         public int scannedAssemblyCount;
         public int declaredExceptionCount;
+        public int preservedTypeCount;
+        public string generatedLinkerDescriptor;
         public List<string> generatedFeatures = new List<string>();
+        public List<string> preservedTypes = new List<string>();
         public List<string> manualLinkXmlFiles = new List<string>();
         public List<DeucarianAotSafetyFinding> findings =
             new List<DeucarianAotSafetyFinding>();
@@ -51,14 +54,23 @@ namespace Deucarian.BuildPipeline
 
         internal void AddFeature(string feature)
         {
-            if (string.IsNullOrWhiteSpace(feature)
-                || generatedFeatures.Contains(feature))
+            AddSortedUnique(generatedFeatures, feature);
+        }
+
+        internal void AddPreservedType(
+            string assemblyName,
+            string typeName)
+        {
+            if (string.IsNullOrWhiteSpace(assemblyName)
+                || string.IsNullOrWhiteSpace(typeName))
             {
                 return;
             }
 
-            generatedFeatures.Add(feature);
-            generatedFeatures.Sort(StringComparer.Ordinal);
+            AddSortedUnique(
+                preservedTypes,
+                assemblyName.Trim() + "::" + typeName.Trim());
+            preservedTypeCount = preservedTypes.Count;
         }
 
         internal void Merge(DeucarianAotSafetyReport other)
@@ -71,26 +83,50 @@ namespace Deucarian.BuildPipeline
             linkerInspectionCompleted |= other.linkerInspectionCompleted;
             scannedAssemblyCount += other.scannedAssemblyCount;
             declaredExceptionCount += other.declaredExceptionCount;
-
-            for (int i = 0; i < other.generatedFeatures.Count; i++)
+            if (!string.IsNullOrWhiteSpace(other.generatedLinkerDescriptor))
             {
-                AddFeature(other.generatedFeatures[i]);
+                generatedLinkerDescriptor =
+                    other.generatedLinkerDescriptor;
             }
 
-            for (int i = 0; i < other.manualLinkXmlFiles.Count; i++)
+            if (other.generatedFeatures != null)
             {
-                string path = other.manualLinkXmlFiles[i];
-                if (!manualLinkXmlFiles.Contains(path))
+                for (int i = 0; i < other.generatedFeatures.Count; i++)
                 {
-                    manualLinkXmlFiles.Add(path);
+                    AddFeature(other.generatedFeatures[i]);
                 }
             }
 
-            manualLinkXmlFiles.Sort(StringComparer.Ordinal);
-            for (int i = 0; i < other.findings.Count; i++)
+            if (other.preservedTypes != null)
             {
-                AddFinding(other.findings[i]);
+                for (int i = 0; i < other.preservedTypes.Count; i++)
+                {
+                    AddSortedUnique(
+                        preservedTypes,
+                        other.preservedTypes[i]);
+                }
             }
+
+            preservedTypeCount = preservedTypes.Count;
+            if (other.manualLinkXmlFiles != null)
+            {
+                for (int i = 0; i < other.manualLinkXmlFiles.Count; i++)
+                {
+                    AddSortedUnique(
+                        manualLinkXmlFiles,
+                        other.manualLinkXmlFiles[i]);
+                }
+            }
+
+            if (other.findings != null)
+            {
+                for (int i = 0; i < other.findings.Count; i++)
+                {
+                    AddFinding(other.findings[i]);
+                }
+            }
+
+            passed &= other.passed;
         }
 
         public string FormatFailure(string heading)
@@ -129,6 +165,23 @@ namespace Deucarian.BuildPipeline
             }
 
             return builder.ToString();
+        }
+
+        private static void AddSortedUnique(
+            List<string> values,
+            string value)
+        {
+            if (values == null || string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
+            string normalized = value.Trim();
+            if (!values.Contains(normalized))
+            {
+                values.Add(normalized);
+                values.Sort(StringComparer.Ordinal);
+            }
         }
     }
 }
