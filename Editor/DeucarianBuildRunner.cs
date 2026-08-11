@@ -42,43 +42,99 @@ namespace Deucarian.BuildPipeline
             }
 
             ValidateBuildOptions(request.Environment, options);
-            BuildReport report;
-            using (DeucarianBuildExecutionScope.Enter())
+            DeucarianAotSafetySettings aotSettings =
+                DeucarianAotSafetySettings.Load();
+            DeucarianAotSafetyMode aotMode = aotSettings.ResolveMode(
+                request.Environment,
+                request.AotSafetyMode);
+            DeucarianAotSafetyReport projectAotReport =
+                DeucarianAotSafetyProjectInspector.Inspect(
+                    aotSettings,
+                    aotMode);
+            DeucarianAotSafetyBuildState.Begin(aotMode, projectAotReport);
+
+            if (aotMode == DeucarianAotSafetyMode.Enforce
+                && !projectAotReport.passed)
             {
-                report = UnityEditor.BuildPipeline.BuildPlayer(
-                    new BuildPlayerWithProfileOptions
+                DeucarianAotSafetyBuildState.Clear();
+                throw new BuildFailedException(
+                    projectAotReport.FormatFailure(
+                        "Deucarian AOT project validation failed"));
+            }
+
+            try
+            {
+                BuildReport report;
+                using (DeucarianBuildExecutionScope.Enter(
+                           request.Environment,
+                           aotMode))
+                {
+                    report = UnityEditor.BuildPipeline.BuildPlayer(
+                        new BuildPlayerWithProfileOptions
+                        {
+                            buildProfile = request.BuildProfile,
+                            locationPathName = request.OutputPath,
+                            options = options
+                        });
+                }
+
+                if (report.summary.result != BuildResult.Succeeded)
+                {
+                    throw new BuildFailedException(
+                        "Build failed with result " + report.summary.result + ".");
+                }
+
+                DeucarianAotSafetyReport aotReport =
+                    DeucarianAotSafetyBuildState.Snapshot();
+                if (aotMode == DeucarianAotSafetyMode.Enforce
+                    && !aotReport.linkerInspectionCompleted)
+                {
+                    aotReport.AddFinding(new DeucarianAotSafetyFinding
                     {
-                        buildProfile = request.BuildProfile,
-                        locationPathName = request.OutputPath,
-                        options = options
+                        category = "InspectionMissing",
+                        message = "The managed linker did not run the Deucarian AOT safety inspection. "
+                                  + "An enforced build cannot prove runtime reachability."
                     });
-            }
-            if (report.summary.result != BuildResult.Succeeded)
-            {
-                throw new BuildFailedException(
-                    "Build failed with result " + report.summary.result + ".");
-            }
+                }
 
-            DeucarianBuildArtifactManifest manifest = DeucarianBuildArtifactManifest.Create(
-                request,
-                report,
-                fingerprint,
-                budgetBytes);
-            DeucarianBuildValidationResult artifactValidation = policy.ValidateGeneratedArtifacts(
-                request,
-                manifest);
-            manifest.WriteTo(DeucarianBuildPathUtility.ToFullOutputPath(request.OutputPath));
-            if (!artifactValidation.IsValid)
-            {
-                throw new BuildFailedException(
-                    artifactValidation.Format("Generated artifact validation failed"));
-            }
+                DeucarianBuildArtifactManifest manifest =
+                    DeucarianBuildArtifactManifest.Create(
+                        request,
+                        report,
+                        fingerprint,
+                        budgetBytes,
+                        aotReport);
+                DeucarianBuildValidationResult artifactValidation =
+                    policy.ValidateGeneratedArtifacts(request, manifest);
+                manifest.WriteTo(
+                    DeucarianBuildPathUtility.ToFullOutputPath(
+                        request.OutputPath));
 
-            return new DeucarianBuildResult
+                if (aotMode == DeucarianAotSafetyMode.Enforce
+                    && !aotReport.passed)
+                {
+                    throw new BuildFailedException(
+                        aotReport.FormatFailure(
+                            "Deucarian AOT safety validation failed"));
+                }
+
+                if (!artifactValidation.IsValid)
+                {
+                    throw new BuildFailedException(
+                        artifactValidation.Format(
+                            "Generated artifact validation failed"));
+                }
+
+                return new DeucarianBuildResult
+                {
+                    BuildReport = report,
+                    ArtifactManifest = manifest
+                };
+            }
+            finally
             {
-                BuildReport = report,
-                ArtifactManifest = manifest
-            };
+                DeucarianAotSafetyBuildState.Clear();
+            }
         }
 
         public static IDeucarianPlatformBuildPolicy GetPolicy(BuildProfile profile)
