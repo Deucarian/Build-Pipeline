@@ -1,8 +1,8 @@
 # Deucarian Build Pipeline
 
-`com.deucarian.build-pipeline` is an editor-only Unity package for repeatable development and production builds. It keeps Build Profiles project-owned while centralizing the settings that should be consistent across Deucarian projects.
+`com.deucarian.build-pipeline` is an Editor-only Unity package for repeatable development and production builds. It keeps Build Profiles and project preparation project-owned while centralizing build policy, AOT and stripping safety, artifact evidence, and headless entry points.
 
-Version 0.4.0 provides a single provider-driven Build Pipeline Manager with a static idle surface and debounced project-change validation. Registered Build Profiles also route Unity's native Build and Build And Run buttons through the same project callback. Target-specific Newtonsoft.Json contracts are preserved automatically when managed stripping runs. The public policy and provider interfaces are platform-neutral so Windows, Android, and iOS policies can be added without redesigning project integrations.
+Version 0.5.0 adds final-player assembly inspection, generated linker evidence, strict runtime-dynamic-code enforcement, stable registered target IDs, and machine-readable command results. The existing Newtonsoft preservation processor remains as a migration safety net, but strict mode deliberately reports reflection-based object mapping so application-owned runtime reflection can be removed instead of permanently hidden behind preservation rules.
 
 ## Install
 
@@ -12,35 +12,22 @@ Reference the stable package channel in `Packages/manifest.json`:
 "com.deucarian.build-pipeline": "https://github.com/Deucarian/Build-Pipeline.git#main"
 ```
 
-Unity 6.0 or newer is required. The package contains Editor assemblies only and contributes nothing to a player build. It depends directly on `com.deucarian.editor` 1.0.5, `com.deucarian.logging` 1.0.2, and Unity's Editor-only `com.unity.nuget.mono-cecil` package.
+Unity 6.0 or newer is required. The package contains Editor assemblies only and contributes no runtime assembly to the player. It depends directly on `com.deucarian.editor` 1.0.5, `com.deucarian.logging` 1.0.2, and Unity's Editor-only `com.unity.nuget.mono-cecil` package.
 
 ## Build Pipeline Manager
 
 Open `Tools > Deucarian > Build Pipeline`. The manager discovers project providers through Unity `TypeCache`, presents their registered workflows, validates profile drift and project preflight rules, and dispatches builds through project-owned callbacks.
 
-Registered workflows also integrate with Unity's native `File > Build Profiles` window.
-When a registered profile is active, Unity's **Build** and **Build And Run** buttons
-dispatch through the same project callback as the manager. The selected output path and
-build options are preserved, while Deucarian policy validation, project preparation,
-manifest generation, and artifact validation remain active. A one-time notice explains
-the integration; unrelated profiles continue through Unity's default build behavior.
+Registered workflows also integrate with Unity's native `File > Build Profiles` window. When a registered profile is active, Unity's **Build** and **Build And Run** buttons dispatch through the same project callback as the manager. The selected output path and build options are preserved, while Deucarian policy validation, project preparation, manifest generation, AOT inspection, and artifact validation remain active.
 
-Use **Open in Unity** beside a registered profile to activate it and open Unity's Build
-Profiles window. Direct `BuildPipeline.BuildPlayer` calls for an active registered profile
-are rejected unless they run through `DeucarianBuildRunner`.
+Use **Open in Unity** beside a registered profile to activate it and open Unity's Build Profiles window. Direct `BuildPipeline.BuildPlayer` calls for an active registered profile are rejected unless they run through `DeucarianBuildRunner`.
 
-The manager also includes a `Custom Build Profile` mode. Select a profile, environment, and project-relative output path to apply a policy explicitly, validate it, or build directly through `DeucarianBuildRunner`.
-
-Profile changes are always explicit. Sync Profiles and Apply Policy ask for confirmation because they modify version-controlled Build Profile assets. Ordinary validation and build actions do not silently edit profiles.
-
-The manager distinguishes the four actions directly in the window:
+Profile changes are explicit:
 
 - **Sync Profiles** creates or refreshes every profile registered by the selected project provider.
 - **Apply Policy** updates only the selected profile with its environment policy.
 - **Validate** checks policy drift and project preflight rules without changing assets.
-- **Build** validates and then runs the selected build workflow.
-
-The first two actions modify version-controlled profile assets. The normal build path is Validate, then Build.
+- **Build** validates and then runs the selected project workflow.
 
 ## Project provider API
 
@@ -48,51 +35,182 @@ Implement `IDeucarianBuildManagerProvider` in an Editor assembly with a public p
 
 Each registered target provides:
 
-- A stable target ID, label, and generic description.
+- A stable target ID, label, and description.
 - A project-owned Build Profile asset path.
 - An environment and project-relative output path.
-- Optional default `BuildOptions` used by the manager and programmatic default builds.
+- Optional default `BuildOptions`.
 - An optional side-effect-free project validation callback.
 - An invocation-aware build callback returning `DeucarianBuildResult`.
 
-The callback receives a `DeucarianBuildInvocation` containing the selected Build Profile,
-output path, additional options, and invocation source. It owns project preflight,
-temporary state, output cleanup, and project artifact validation. The manager and Unity
-native bridge never bypass it.
+The callback receives a `DeucarianBuildInvocation` containing the selected Build Profile, output path, additional options, invocation source, and requested AOT safety mode. It owns project preflight, temporary state, output cleanup, and project artifact validation. The manager, native Unity bridge, and CI registry all dispatch through this same callback.
 
 ## Core API
 
 - `DeucarianBuildEnvironment`: `Development` or `Production`.
-- `DeucarianBuildRequest`: Build Profile, environment, output path, and additional build options.
-- `DeucarianBuildDispatcher`: validates and invokes registered targets consistently from the manager, Unity Build Profiles, CI, or project code.
+- `DeucarianAotSafetyMode`: `Inherit`, `Audit`, or `Enforce`.
+- `DeucarianBuildRequest`: Build Profile, environment, output path, additional options, and AOT mode.
+- `DeucarianBuildDispatcher`: validates and invokes registered targets consistently.
+- `DeucarianBuildTargetRegistry`: lists, validates, resolves, and builds registered workflows through stable `provider/target` keys.
 - `IDeucarianPlatformBuildPolicy`: applies settings, detects drift, and validates generated artifacts.
 - `DeucarianBuildRunner.Build(request)`: validates and calls `BuildPipeline.BuildPlayer(BuildPlayerWithProfileOptions)`.
-- `DeucarianBuildArtifactManifest`: artifact paths and encoded/raw sizes, versions, build GUID, duration, settings fingerprint, and budget result.
+- `DeucarianBuildArtifactManifest`: artifact evidence, build identity, size budget, and AOT safety report.
 
-The WebGL policy maps development to an inspectable build and production to Brotli, hashed filenames, data caching, High managed stripping, size-optimized IL2CPP, engine stripping, and WebAssembly 2023. Build And Run supplies `AutoRunPlayer` through its invocation instead of making every development build launch automatically. The policy leaves scenes, memory, rendering and quality assets, templates, identifiers, icons, and runtime content-loading behavior project-owned.
+The WebGL policy maps development to an inspectable build and production to Brotli, hashed filenames, data caching, High managed stripping, size-optimized IL2CPP, engine stripping, and WebAssembly 2023. Scenes, memory, rendering, quality assets, templates, identifiers, icons, and runtime content-loading behavior remain project-owned.
 
-## Newtonsoft.Json and managed stripping
+## AOT and stripping safety
 
-Before Unity's managed linker runs, the package inspects the exact target player assemblies with Mono.Cecil. Types carrying Newtonsoft.Json serialization attributes, supported `System.Runtime.Serialization` contract attributes, and types referenced by those attributes are written to a deterministic descriptor under `Library/Deucarian/BuildPipeline/NewtonsoftLinker`. Each discovered contract uses `preserve="all"`, protecting constructors, accessors, fields, callbacks, and converters used through reflection. Missing or unreadable linker input stops the build instead of producing a potentially broken player.
+Before UnityLinker removes managed code, Build Pipeline inspects the exact managed assemblies reported for that player build with Mono.Cecil. It reports runtime patterns whose targets cannot be proven through ordinary static reachability, including:
 
-Automatic discovery is annotation-driven: every application POCO serialized or deserialized through Newtonsoft.Json must declare `[JsonObject]` or at least one Newtonsoft serialization attribute. Compiled code does not expose enough information to infer arbitrary objects passed dynamically to Json.NET. The scan covers target script assemblies that Unity classifies as `ManagedLibrary`; precompiled dependency contracts, unannotated contracts, and dynamic contracts still require their package or project to provide an explicit `link.xml` rule. An installed project that does not use Newtonsoft.Json produces a valid empty linker descriptor.
+- Assembly and type discovery.
+- `Activator.CreateInstance` and reflective invocation.
+- Reflection-based Newtonsoft, System.Text.Json, XML, and data-contract object mapping.
+- Runtime expression compilation.
+- Unity string dispatch such as `SendMessage`, `Invoke(string)`, `StartCoroutine(string)`, and string-based component creation or lookup.
 
-## Command line
+Editor-only reflection is not part of the player assemblies and is therefore outside this rule.
 
-The command-line API remains stable:
+### Modes
+
+`Audit` records findings in `deucarian-build-manifest.json` without blocking the build. This is the migration mode and the default for projects without settings.
+
+`Enforce` fails closed when:
+
+- An unbounded runtime-dynamic call remains.
+- A declared exception is incomplete.
+- A generated preserve declaration references a missing assembly or type.
+- The managed linker did not run the final assembly inspection.
+- A project-owned `Assets/**/link.xml` file exists.
+
+A command-line build can force enforcement without changing project settings:
+
+```text
+-deucarianAotMode Enforce
+```
+
+Projects can version a human-readable policy at `ProjectSettings/DeucarianAotSafety.json`:
+
+```json
+{
+  "developmentMode": "Audit",
+  "productionMode": "Enforce",
+  "rejectManualProjectLinkXml": true,
+  "preserveTypes": [],
+  "exceptions": []
+}
+```
+
+### Exact compatibility exceptions
+
+Application-owned runtime code should be generated or explicitly composed. An exception is reserved for a framework or vendor boundary that cannot yet be rewritten. It must identify the exact assembly, declaring type, method, called API, strategy, and reason.
+
+A `Declared` strategy also supplies exact hidden target types:
+
+```json
+{
+  "assemblyName": "Vendor.Integration",
+  "declaringType": "Vendor.Factory",
+  "method": "Create",
+  "calledApi": "System.Activator::CreateInstance",
+  "strategy": "Declared",
+  "reason": "Vendor SDK compatibility boundary.",
+  "preserveTypes": [
+    {
+      "assemblyName": "Vendor.Runtime",
+      "typeName": "Vendor.CallbackReceiver",
+      "reason": "Constructed by the vendor boundary."
+    }
+  ]
+}
+```
+
+Build Pipeline verifies every declared assembly and type against the final player inputs, then writes a deterministic descriptor under `Library/Deucarian/BuildPipeline/AotSafety`. Nobody maintains the resulting `link.xml` by hand.
+
+`Generated` means normal direct calls were emitted and should usually leave no dynamic call to exempt. `Framework` is reserved for a narrowly audited framework boundary that owns its own AOT behavior.
+
+### Package-owned evidence
+
+Packages and source generators can carry neutral evidence in their compiled assembly without depending on Build Pipeline:
+
+```csharp
+[assembly: AssemblyMetadata(
+    "Deucarian.AOT.Feature",
+    "serialization-json")]
+
+[assembly: AssemblyMetadata(
+    "Deucarian.AOT.Exception",
+    "Vendor.Factory|Create|System.Activator::CreateInstance|Declared|Vendor compatibility boundary.")]
+
+[assembly: AssemblyMetadata(
+    "Deucarian.AOT.PreserveType",
+    "Vendor.Runtime|Vendor.CallbackReceiver|Constructed by the vendor boundary.")]
+```
+
+Build Pipeline reads this evidence from the final player assemblies, verifies it, generates linker input for exact declarations, and records the result in the build manifest.
+
+## Newtonsoft migration boundary
+
+Version 0.4.0 introduced automatic annotation-driven Newtonsoft preservation so current projects would stop failing silently under High stripping. That processor remains active during migration and generates its own deterministic descriptor.
+
+Version 0.5.0 does not treat preservation as the final architecture. In `Enforce` mode, application-owned calls to reflection-based JSON object mapping remain findings. The intended end state is generated serialization with normal constructor and member calls, at which point no DTO preservation rule is needed.
+
+Low-level JSON token parsing such as an explicitly implemented protocol codec is not treated as reflective object mapping.
+
+## Target-aware command line
+
+Use the public `Run` entry point for new automation.
+
+List registered targets:
+
+```text
+-batchmode -quit \
+-executeMethod Deucarian.BuildPipeline.DeucarianBuildCommandLine.Run \
+-deucarianAction list \
+-deucarianResult "Artifacts/build-targets.json"
+```
+
+Validate a target without building:
 
 ```text
 -batchmode -quit \
 -activeBuildProfile "Assets/Settings/Build Profiles/Web Production.asset" \
--executeMethod Deucarian.BuildPipeline.DeucarianBuildCommandLine.Build \
--deucarianProfile "Assets/Settings/Build Profiles/Web Production.asset" \
--deucarianEnvironment Production \
--deucarianOutput "Builds/WebGL/Production"
+-executeMethod Deucarian.BuildPipeline.DeucarianBuildCommandLine.Run \
+-deucarianAction validate \
+-deucarianTarget "viewer/webgl-production" \
+-deucarianAotMode Enforce \
+-deucarianResult "Artifacts/validation-result.json"
 ```
 
-`-activeBuildProfile` is a Unity startup argument: it selects the target and profile-specific scripting defines before package and project scripts compile. `-deucarianProfile` tells this package which profile to validate and build, so both arguments must name the same asset. A target-only `-buildTarget WebGL` is a valid fallback, but `-activeBuildProfile` is the canonical Unity 6 invocation. The runner also rejects target mismatches with this guidance before starting a build.
+Build through the registered project workflow:
 
-Optional `-deucarianOptions` accepts a comma-separated list of `BuildOptions` names. Environment-required options are added by the runner.
+```text
+-batchmode -quit \
+-activeBuildProfile "Assets/Settings/Build Profiles/Web Production.asset" \
+-executeMethod Deucarian.BuildPipeline.DeucarianBuildCommandLine.Run \
+-deucarianAction build \
+-deucarianTarget "viewer/webgl-production" \
+-deucarianOutput "Builds/WebGL/Production" \
+-deucarianAotMode Enforce \
+-deucarianResult "Artifacts/build-result.json"
+```
+
+`-deucarianOptions` accepts a comma-separated list of `BuildOptions` names. Target defaults and environment-required options are added automatically.
+
+`-activeBuildProfile` is a Unity startup argument. It selects target-specific scripting defines before package and project scripts compile, so it must reference the profile registered by the chosen target. A target-only `-buildTarget` is a fallback, but `-activeBuildProfile` is canonical for Unity 6.
+
+The profile-based `DeucarianBuildCommandLine.Build` entry point remains available for existing automation and now accepts `-deucarianAotMode` and `-deucarianResult` as optional arguments.
+
+## CI and deployment boundary
+
+Build Pipeline owns deterministic validation and player build execution. An external CI system should orchestrate separate Unity invocations for compilation, EditMode tests, PlayMode tests, player build, and stripped-player smoke testing.
+
+The build output contains:
+
+```text
+player files
+deucarian-build-manifest.json
+```
+
+The command writes a separate result JSON even on failure. Deployment should consume the already-tested immutable artifact after Unity exits. Hosting credentials, SSH/CDN clients, release promotion, health checks, and rollback remain outside the Unity package.
 
 ## Web deployment boundary
 
@@ -101,7 +219,3 @@ Production output uses Brotli with decompression fallback disabled. The external
 ## Production gates
 
 The WebGL production gate rejects development options, drifted profiles, raw generated payload files, debug-symbol artifacts, development-context artifacts, non-hashed compressed payload names, and an encoded pre-engine bootstrap above 20 MiB. `StreamingAssets` is excluded because streamed project data loads after the engine boundary.
-
-For startup benchmarking, use seven cold evergreen-Chromium runs at 20 Mbps, 40 ms RTT, and 4x CPU throttling. Compare median `page-start` to `engine-ready`; post-engine content belongs to a separate project-owned measurement. A production candidate must improve the preserved baseline by at least 40%.
-
-Before changing production IL2CPP from Optimize Size to Faster Runtime, compare a representative workload over the same scripted 30-second interaction sequence. Switch only when Optimize Size increases p95 frame time by more than 5%.
