@@ -9,11 +9,6 @@ namespace Deucarian.BuildPipeline
 {
     internal static class DeucarianAotSafetyScanner
     {
-        private const string AssemblyMetadataAttributeName =
-            "System.Reflection.AssemblyMetadataAttribute";
-        private const string AotFeatureMetadataKey =
-            "Deucarian.AOT.Feature";
-
         private static readonly StringComparer PathComparer =
             Path.DirectorySeparatorChar == '\\'
                 ? StringComparer.OrdinalIgnoreCase
@@ -139,11 +134,18 @@ namespace Deucarian.BuildPipeline
                                 ReadingMode = ReadingMode.Immediate,
                                 ReadSymbols = false
                             });
-                        ReadGeneratedEvidence(assembly, report);
+                        DeucarianAotAssemblyEvidence evidence =
+                            DeucarianAotAssemblyEvidence.Read(
+                                assembly,
+                                report);
                         if (ShouldInspectAssembly(assembly.Name.Name))
                         {
                             report.scannedAssemblyCount++;
-                            InspectAssembly(assembly, settings, report);
+                            InspectAssembly(
+                                assembly,
+                                settings,
+                                evidence,
+                                report);
                         }
                     }
                     catch (Exception exception)
@@ -166,6 +168,7 @@ namespace Deucarian.BuildPipeline
         private static void InspectAssembly(
             AssemblyDefinition assembly,
             DeucarianAotSafetySettings settings,
+            DeucarianAotAssemblyEvidence evidence,
             DeucarianAotSafetyReport report)
         {
             foreach (TypeDefinition type in EnumerateTypes(
@@ -196,12 +199,19 @@ namespace Deucarian.BuildPipeline
                         }
 
                         string calledApi = GetCalledApi(calledMethod);
-                        if (settings != null
-                            && settings.IsDeclaredException(
-                                assembly.Name.Name,
-                                type.FullName,
-                                method.Name,
-                                calledApi))
+                        bool projectException = settings != null
+                                                && settings.IsDeclaredException(
+                                                    assembly.Name.Name,
+                                                    type.FullName,
+                                                    method.Name,
+                                                    calledApi);
+                        bool packageException = evidence != null
+                                                && evidence.IsDeclaredException(
+                                                    assembly.Name.Name,
+                                                    type.FullName,
+                                                    method.Name,
+                                                    calledApi);
+                        if (projectException || packageException)
                         {
                             report.declaredExceptionCount++;
                             continue;
@@ -281,7 +291,9 @@ namespace Deucarian.BuildPipeline
                 return true;
             }
 
-            if (typeName == "System.Linq.Expressions.LambdaExpression"
+            if (typeName.StartsWith(
+                    "System.Linq.Expressions.",
+                    StringComparison.Ordinal)
                 && methodName == "Compile")
             {
                 category = "RuntimeCodeGeneration";
@@ -401,32 +413,6 @@ namespace Deucarian.BuildPipeline
         private static string GetCalledApi(MethodReference method)
         {
             return method.DeclaringType.FullName + "::" + method.Name;
-        }
-
-        private static void ReadGeneratedEvidence(
-            AssemblyDefinition assembly,
-            DeucarianAotSafetyReport report)
-        {
-            for (int i = 0; i < assembly.CustomAttributes.Count; i++)
-            {
-                CustomAttribute attribute = assembly.CustomAttributes[i];
-                if (attribute.AttributeType.FullName !=
-                    AssemblyMetadataAttributeName
-                    || attribute.ConstructorArguments.Count != 2)
-                {
-                    continue;
-                }
-
-                string key = attribute.ConstructorArguments[0].Value as string;
-                string value = attribute.ConstructorArguments[1].Value as string;
-                if (string.Equals(
-                        key,
-                        AotFeatureMetadataKey,
-                        StringComparison.Ordinal))
-                {
-                    report.AddFeature(value);
-                }
-            }
         }
 
         private static bool ShouldInspectAssembly(string assemblyName)
