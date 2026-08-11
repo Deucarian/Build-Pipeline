@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.0 - 2026-08-12
+
+- Added final-player Mono.Cecil inspection for runtime reflection, dynamic construction, assembly scanning, reflection-based serializers, runtime code generation, and Unity string dispatch.
+- Added Audit and Enforce AOT safety modes, command-line overrides, exact documented exceptions, and fail-closed production behavior.
+- Added automatic detection of project-owned `Assets/**/link.xml` files so application preservation moves to generated evidence instead of handwritten linker descriptors.
+- Added package-owned AOT evidence through assembly metadata for generated features, exact dynamic-call exceptions, and exact type preservation declarations.
+- Added deterministic generated linker descriptors for validated project and package declarations, with stale assembly or type references reported before a successful enforced build.
+- Added AOT evidence to schema-v2 build manifests, including scanned assemblies, declared exceptions, preserved types, generated features, findings, and generated descriptor path.
+- Added public registered build target discovery, validation, and build APIs using stable `provider/target` IDs.
+- Added a target-aware command-line entry point with list, validate, and build actions plus machine-readable success and failure results.
+- Preserved the profile-based command-line entry point for existing automation while adding optional AOT enforcement.
+- Added Unity 6000 EditMode CI and focused coverage for AOT scanning, package evidence, generated linker output, target discovery, command parsing, and command results.
+
 ## 0.4.0 - 2026-08-11
 
 - Added target-aware Newtonsoft.Json and data-contract discovery for the exact player script assemblies reported by Unity, including inherited member contracts and safe dependency resolution.
