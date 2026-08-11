@@ -10,7 +10,7 @@ namespace Deucarian.BuildPipeline
     public sealed class DeucarianBuildArtifactManifest
     {
         public const string FileName = "deucarian-build-manifest.json";
-        public const int CurrentSchemaVersion = 1;
+        public const int CurrentSchemaVersion = 2;
 
         public int schemaVersion = CurrentSchemaVersion;
         public string packageVersion;
@@ -19,6 +19,8 @@ namespace Deucarian.BuildPipeline
         public string buildGuid;
         public double durationSeconds;
         public string settingsFingerprint;
+        public DeucarianAotSafetyReport aotSafety =
+            new DeucarianAotSafetyReport();
         public DeucarianBuildBudgetResult budget = new DeucarianBuildBudgetResult();
         public List<DeucarianBuildArtifact> artifacts = new List<DeucarianBuildArtifact>();
 
@@ -42,7 +44,8 @@ namespace Deucarian.BuildPipeline
             DeucarianBuildRequest request,
             BuildReport report,
             string settingsFingerprint,
-            long bootstrapBudgetBytes)
+            long bootstrapBudgetBytes,
+            DeucarianAotSafetyReport aotSafetyReport)
         {
             string outputFullPath = DeucarianBuildPathUtility.ToFullOutputPath(request.OutputPath);
             DeucarianBuildArtifactManifest manifest = new DeucarianBuildArtifactManifest
@@ -52,7 +55,8 @@ namespace Deucarian.BuildPipeline
                 environment = request.Environment.ToString(),
                 buildGuid = report.summary.guid.ToString(),
                 durationSeconds = report.summary.totalTime.TotalSeconds,
-                settingsFingerprint = settingsFingerprint
+                settingsFingerprint = settingsFingerprint,
+                aotSafety = aotSafetyReport ?? new DeucarianAotSafetyReport()
             };
 
             if (Directory.Exists(outputFullPath))
@@ -119,6 +123,6 @@ namespace Deucarian.BuildPipeline
 
     internal static class DeucarianBuildPackage
     {
-        internal const string Version = "0.4.0";
+        internal const string Version = "0.5.0";
     }
 }
