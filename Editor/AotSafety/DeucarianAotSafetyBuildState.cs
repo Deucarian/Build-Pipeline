@@ -4,15 +4,28 @@ namespace Deucarian.BuildPipeline
     {
         private static readonly object SyncRoot = new object();
         private static DeucarianAotSafetyReport report;
+        private static DeucarianAotSafetyMode? mode;
+
+        internal static DeucarianAotSafetyMode? CurrentMode
+        {
+            get
+            {
+                lock (SyncRoot)
+                {
+                    return mode;
+                }
+            }
+        }
 
         internal static void Begin(
-            DeucarianAotSafetyMode mode,
+            DeucarianAotSafetyMode requestedMode,
             DeucarianAotSafetyReport initialReport)
         {
             lock (SyncRoot)
             {
+                mode = requestedMode;
                 report = initialReport ?? new DeucarianAotSafetyReport();
-                report.mode = mode.ToString();
+                report.mode = requestedMode.ToString();
             }
         }
 
@@ -23,6 +36,10 @@ namespace Deucarian.BuildPipeline
                 if (report == null)
                 {
                     report = new DeucarianAotSafetyReport();
+                    if (mode.HasValue)
+                    {
+                        report.mode = mode.Value.ToString();
+                    }
                 }
 
                 report.Merge(value);
@@ -42,6 +59,7 @@ namespace Deucarian.BuildPipeline
             lock (SyncRoot)
             {
                 report = null;
+                mode = null;
             }
         }
     }
