@@ -24,7 +24,9 @@ namespace Deucarian.BuildPipeline
             BuildProfile buildProfile,
             string outputPath,
             BuildOptions additionalBuildOptions,
-            DeucarianBuildInvocationSource source)
+            DeucarianBuildInvocationSource source,
+            DeucarianAotSafetyMode aotSafetyMode =
+                DeucarianAotSafetyMode.Inherit)
         {
             BuildProfile = buildProfile != null
                 ? buildProfile
@@ -32,6 +34,7 @@ namespace Deucarian.BuildPipeline
             OutputPath = Require(outputPath, nameof(outputPath));
             AdditionalBuildOptions = additionalBuildOptions;
             Source = source;
+            AotSafetyMode = aotSafetyMode;
         }
 
         public BuildProfile BuildProfile { get; }
@@ -41,6 +44,8 @@ namespace Deucarian.BuildPipeline
         public BuildOptions AdditionalBuildOptions { get; }
 
         public DeucarianBuildInvocationSource Source { get; }
+
+        public DeucarianAotSafetyMode AotSafetyMode { get; }
 
         private static string Require(string value, string parameterName)
         {
