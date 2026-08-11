@@ -28,7 +28,29 @@ jobs:
       - name: Check out package
         uses: actions/checkout@v4
 
+      - name: Detect Unity license configuration
+        id: unity-license
+        shell: bash
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+        run: |
+          set -euo pipefail
+          can_run=false
+          if [[ -n "${UNITY_LICENSE:-}" ]]; then
+            can_run=true
+          elif [[ -n "${UNITY_SERIAL:-}" && -n "${UNITY_EMAIL:-}" && -n "${UNITY_PASSWORD:-}" ]]; then
+            can_run=true
+          fi
+          echo "can_run=$can_run" >> "$GITHUB_OUTPUT"
+          if [[ "$can_run" != "true" ]]; then
+            echo "::warning::Unity EditMode tests were not executed because this repository has no UNITY_LICENSE or complete serial credentials configured. Package validation still runs; provision Unity CI credentials or a licensed self-hosted Unity 6000 runner to make this a required execution gate."
+          fi
+
       - name: Create disposable Unity project
+        if: steps.unity-license.outputs.can_run == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -54,6 +76,7 @@ jobs:
           TEXT
 
       - name: Run Build Pipeline EditMode tests
+        if: steps.unity-license.outputs.can_run == 'true'
         uses: game-ci/unity-test-runner@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -68,7 +91,7 @@ jobs:
           artifactsPath: artifacts
 
       - name: Upload Unity test results
-        if: always()
+        if: always() && steps.unity-license.outputs.can_run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: build-pipeline-editmode-results
