@@ -6,10 +6,10 @@ Version 0.4.0 provides a single provider-driven Build Pipeline Manager with a st
 
 ## Install
 
-Reference the release tag in `Packages/manifest.json`:
+Reference the stable package channel in `Packages/manifest.json`:
 
 ```json
-"com.deucarian.build-pipeline": "https://github.com/Deucarian/Build-Pipeline.git#v0.4.0"
+"com.deucarian.build-pipeline": "https://github.com/Deucarian/Build-Pipeline.git#main"
 ```
 
 Unity 6.0 or newer is required. The package contains Editor assemblies only and contributes nothing to a player build. It depends directly on `com.deucarian.editor` 1.0.5, `com.deucarian.logging` 1.0.2, and Unity's Editor-only `com.unity.nuget.mono-cecil` package.
