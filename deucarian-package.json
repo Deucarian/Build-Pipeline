@@ -3,7 +3,8 @@
   "displayName": "Deucarian Build Pipeline",
   "samplePolicy": "tool",
   "ownedCapabilities": [
-    "build-pipeline"
+    "build-pipeline",
+    "aot-stripping-safety"
   ],
   "runtimeAssemblies": [],
   "editorAssemblies": [
@@ -26,5 +27,9 @@
       "reason": "Disposes the transient non-asset BuildProfile instance returned by Unity's editor-only profile factory."
     }
   ],
+  "aotSafety": {
+    "mode": "Enforce",
+    "exceptions": []
+  },
   "expectedSamplesRoot": ""
 }
