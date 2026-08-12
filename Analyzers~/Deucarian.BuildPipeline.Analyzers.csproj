@@ -11,6 +11,7 @@
     <Deterministic>true</Deterministic>
     <PathMap>$(MSBuildProjectDirectory)=/_/Deucarian.BuildPipeline.Analyzers</PathMap>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <AnalyzerSourceFingerprint>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/SourceFingerprint.txt').Trim())</AnalyzerSourceFingerprint>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <NoWarn>$(NoWarn);RS1012</NoWarn>
@@ -23,11 +24,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>Deucarian.Analyzer.SourceSha256</_Parameter1>
+      <_Parameter2>$(AnalyzerSourceFingerprint)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.3.1" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
   </ItemGroup>
 
-  <Target Name="CopyUnityAnalyzer" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+  <Target Name="CopyUnityAnalyzer" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(UpdateUnityAnalyzer)' == 'true'">
     <Copy SourceFiles="$(TargetPath)"
           DestinationFiles="$(MSBuildProjectDirectory)/../Analyzers/Deucarian.BuildPipeline.Analyzers.dll" />
   </Target>

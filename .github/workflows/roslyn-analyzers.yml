@@ -46,7 +46,3 @@ jobs:
           Analyzers~/Tests/Deucarian.BuildPipeline.Analyzers.Tests.csproj
           --configuration Release
           --nologo
-
-      - name: Verify packaged analyzer is current
-        if: runner.os == 'Windows'
-        run: git diff --exit-code -- Analyzers/Deucarian.BuildPipeline.Analyzers.dll

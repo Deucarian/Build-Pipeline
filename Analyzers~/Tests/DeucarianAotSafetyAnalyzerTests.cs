@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.Loader;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Deucarian.BuildPipeline.Analyzers;
@@ -278,6 +282,45 @@ public static class EditorFactory
             Assert.Empty(diagnostics);
         }
 
+        [Fact]
+        public void PackagedAnalyzerMatchesCanonicalSourceFingerprint()
+        {
+            string packageRoot = FindPackageRoot();
+            string expected = File.ReadAllText(Path.Combine(
+                    packageRoot,
+                    "Analyzers~",
+                    "SourceFingerprint.txt"))
+                .Trim();
+            string actual = ComputeSourceFingerprint(packageRoot);
+
+            Assert.Equal(expected, actual);
+
+            string packagedAssembly = Path.Combine(
+                packageRoot,
+                "Analyzers",
+                "Deucarian.BuildPipeline.Analyzers.dll");
+            AssemblyLoadContext loadContext = new AssemblyLoadContext(
+                "DeucarianPackagedAnalyzer",
+                isCollectible: true);
+            loadContext.Resolving += (_, name) =>
+                AssemblyLoadContext.Default.Assemblies.FirstOrDefault(
+                    assembly => assembly.GetName().Name == name.Name);
+            try
+            {
+                Assembly assembly = loadContext.LoadFromAssemblyPath(
+                    packagedAssembly);
+                AssemblyMetadataAttribute metadata = Assert.Single(
+                    assembly.GetCustomAttributes<AssemblyMetadataAttribute>(),
+                    attribute => attribute.Key ==
+                        "Deucarian.Analyzer.SourceSha256");
+                Assert.Equal(expected, metadata.Value);
+            }
+            finally
+            {
+                loadContext.Unload();
+            }
+        }
+
         private static async Task<Diagnostic> GetSingleDiagnosticAsync(
             string source)
         {
@@ -401,6 +444,69 @@ public static class EditorFactory
             return trustedAssemblies
                 .Split(Path.PathSeparator)
                 .Select(path => MetadataReference.CreateFromFile(path));
+        }
+
+        private static string FindPackageRoot()
+        {
+            DirectoryInfo current = new DirectoryInfo(
+                AppContext.BaseDirectory);
+            while (current != null)
+            {
+                if (Directory.Exists(Path.Combine(
+                        current.FullName,
+                        "Analyzers~"))
+                    && Directory.Exists(Path.Combine(
+                        current.FullName,
+                        "Analyzers")))
+                {
+                    return current.FullName;
+                }
+
+                current = current.Parent;
+            }
+
+            throw new DirectoryNotFoundException(
+                "Could not locate the Build Pipeline package root.");
+        }
+
+        private static string ComputeSourceFingerprint(string packageRoot)
+        {
+            string analyzerRoot = Path.Combine(packageRoot, "Analyzers~");
+            IEnumerable<string> sourceFiles = Directory.GetFiles(
+                    Path.Combine(analyzerRoot, "Source"),
+                    "*.cs",
+                    SearchOption.AllDirectories)
+                .Concat(new[]
+                {
+                    Path.Combine(
+                        analyzerRoot,
+                        "Deucarian.BuildPipeline.Analyzers.csproj")
+                })
+                .OrderBy(path => Path.GetRelativePath(packageRoot, path)
+                    .Replace('\\', '/'), StringComparer.Ordinal);
+
+            using (IncrementalHash hash = IncrementalHash.CreateHash(
+                       HashAlgorithmName.SHA256))
+            {
+                foreach (string path in sourceFiles)
+                {
+                    string relativePath = Path.GetRelativePath(
+                            packageRoot,
+                            path)
+                        .Replace('\\', '/');
+                    hash.AppendData(Encoding.UTF8.GetBytes(relativePath));
+                    hash.AppendData(new byte[] { 0 });
+                    string canonicalContents = File.ReadAllText(path)
+                        .Replace("\r\n", "\n")
+                        .Replace('\r', '\n');
+                    hash.AppendData(Encoding.UTF8.GetBytes(
+                        canonicalContents));
+                    hash.AppendData(new byte[] { 0 });
+                }
+
+                return Convert.ToHexString(hash.GetHashAndReset())
+                    .ToLowerInvariant();
+            }
         }
     }
 }
