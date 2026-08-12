@@ -20,9 +20,16 @@ permissions:
 
 jobs:
   test:
-    name: Build, test, and verify packaged analyzer
-    runs-on: ubuntu-latest
+    name: Build and test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
 
     steps:
       - name: Check out package
@@ -41,4 +48,5 @@ jobs:
           --nologo
 
       - name: Verify packaged analyzer is current
+        if: runner.os == 'Windows'
         run: git diff --exit-code -- Analyzers/Deucarian.BuildPipeline.Analyzers.dll
