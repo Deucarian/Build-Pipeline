@@ -10,7 +10,9 @@
     "webgl",
     "ci",
     "aot",
-    "stripping"
+    "stripping",
+    "roslyn",
+    "analyzer"
   ],
   "author": {
     "name": "Deucarian"

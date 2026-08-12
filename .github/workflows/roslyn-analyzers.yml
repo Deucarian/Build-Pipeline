@@ -1,0 +1,44 @@
+name: Roslyn Analyzer Tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - develop
+      - main
+  push:
+    branches:
+      - develop
+      - main
+
+concurrency:
+  group: build-pipeline-analyzers-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build, test, and verify packaged analyzer
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out package
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.424
+
+      - name: Run analyzer and code-fix tests
+        run: >-
+          dotnet test
+          Analyzers~/Tests/Deucarian.BuildPipeline.Analyzers.Tests.csproj
+          --configuration Release
+          --nologo
+
+      - name: Verify packaged analyzer is current
+        run: git diff --exit-code -- Analyzers/Deucarian.BuildPipeline.Analyzers.dll

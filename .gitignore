@@ -6,3 +6,8 @@
 *.sln
 *.user
 .DS_Store
+
+# Roslyn analyzer development sources live in a Unity-ignored tilde folder.
+!Analyzers~/**/*.csproj
+Analyzers~/**/[Bb]in/
+Analyzers~/**/[Oo]bj/

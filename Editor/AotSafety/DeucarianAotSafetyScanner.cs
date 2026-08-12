@@ -300,6 +300,21 @@ namespace Deucarian.BuildPipeline
                 return true;
             }
 
+            if (typeName.StartsWith(
+                    "System.Reflection.Emit.",
+                    StringComparison.Ordinal))
+            {
+                category = "RuntimeCodeGeneration";
+                return true;
+            }
+
+            if (typeName == "System.Delegate"
+                && methodName == "DynamicInvoke")
+            {
+                category = "ReflectiveInvocation";
+                return true;
+            }
+
             if (typeName == "Newtonsoft.Json.JsonConvert"
                 && (methodName == "SerializeObject"
                     || methodName == "DeserializeObject"

@@ -66,6 +66,65 @@ namespace Deucarian.BuildPipeline.Tests
         }
 
         [Test]
+        public void Scan_FindsReflectionEmitCalls()
+        {
+            using (CecilAssemblyFixture fixture =
+                   new CecilAssemblyFixture(
+                       "Game.Runtime",
+                       referencesNewtonsoft: false))
+            {
+                TypeDefinition type = fixture.AddType("Game", "Compiler");
+                TypeReference emitType = new TypeReference(
+                    "System.Reflection.Emit",
+                    "DynamicMethod",
+                    fixture.Module,
+                    fixture.Module.TypeSystem.CoreLibrary);
+                MethodReference create = new MethodReference(
+                    "Create",
+                    fixture.Module.TypeSystem.Object,
+                    emitType)
+                {
+                    HasThis = false
+                };
+                AddCall(fixture.Module, type, create);
+                string path = fixture.Write();
+
+                DeucarianAotSafetyReport report = Scan(fixture, path);
+
+                Assert.That(report.passed, Is.False);
+                Assert.That(
+                    report.findings.Any(finding =>
+                        finding.category == "RuntimeCodeGeneration"),
+                    Is.True);
+            }
+        }
+
+        [Test]
+        public void Scan_FindsDelegateDynamicInvoke()
+        {
+            using (CecilAssemblyFixture fixture =
+                   new CecilAssemblyFixture(
+                       "Game.Runtime",
+                       referencesNewtonsoft: false))
+            {
+                TypeDefinition type = fixture.AddType("Game", "Invoker");
+                MethodInfo dynamicInvoke = typeof(Delegate).GetMethod(
+                    "DynamicInvoke",
+                    new[] { typeof(object[]) });
+                AddCall(fixture.Module, type, dynamicInvoke);
+                string path = fixture.Write();
+
+                DeucarianAotSafetyReport report = Scan(fixture, path);
+
+                Assert.That(report.passed, Is.False);
+                Assert.That(
+                    report.findings.Any(finding =>
+                        finding.category == "ReflectiveInvocation"),
+                    Is.True);
+            }
+        }
+
+        [Test]
         public void Scan_AllowsExactDeclaredAndPreservedException()
         {
             using (CecilAssemblyFixture fixture =

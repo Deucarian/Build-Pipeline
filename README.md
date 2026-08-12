@@ -69,6 +69,41 @@ Before UnityLinker removes managed code, Build Pipeline inspects the exact manag
 
 Editor-only reflection is not part of the player assemblies and is therefore outside this rule.
 
+### Compiler-backed AOT diagnostics
+
+The package ships `Deucarian.BuildPipeline.Analyzers.dll` as a standard Roslyn analyzer. Unity imports that asset with the `RoslynAnalyzer` label, so the same diagnostic IDs and messages are available to Unity compilation, the Unity Console, CI, and Roslyn-aware editors that consume Unity's generated C# projects. This is not a Rider plugin and contains no IDE-specific inspection API.
+
+| ID | Default | Meaning | Action |
+|---|---|---|---|
+| `DBP1001` | Warning | Runtime type, member, or assembly discovery | Replace a constant lookup with `typeof(...)`, or introduce generated/explicit registration. |
+| `DBP1002` | Warning | Reflective invocation or dynamic construction | Use a direct call/constructor, or an explicit factory keyed by closed types. |
+| `DBP1003` | Error | Runtime IL/code generation such as `System.Reflection.Emit` | Replace it with generated or statically compiled code; linker preservation cannot make this AOT-safe. |
+| `DBP1004` | Warning | Unity string dispatch | Use a strongly typed component, direct method call, or explicit delegate. |
+| `DBP1005` | Warning | Runtime expression compilation | Generate or statically compile the path, or isolate an explicitly audited interpreter boundary. |
+
+Warnings are the right migration default because source analysis cannot see every project compatibility boundary. `Enforce` remains the authoritative production gate: it inspects the compiled player assemblies and fails any remaining undeclared hazard even if a source diagnostic was suppressed. Teams can promote warning diagnostics to errors with normal Roslyn severity configuration, for example:
+
+```ini
+[*.cs]
+dotnet_diagnostic.DBP1001.severity = error
+dotnet_diagnostic.DBP1002.severity = error
+dotnet_diagnostic.DBP1004.severity = error
+dotnet_diagnostic.DBP1005.severity = error
+```
+
+The analyzer skips generated code plus assemblies that are recognizably Editor-only or test-only. A global analyzer configuration can explicitly set `deucarian_aot_analysis = enabled` or `disabled` when an assembly does not follow those conventions.
+
+Quick actions are offered only when the replacement target and syntax are deterministic:
+
+```csharp
+Activator.CreateInstance<Widget>()  // becomes: new Widget()
+Type.GetType("Example.Widget")      // becomes: typeof(Widget)
+```
+
+The direct-construction fix is offered only when the target has an accessible parameterless constructor (or a valid generic constructor constraint). The `typeof` fix is offered only when the constant type name resolves unambiguously. Runtime-selected factories, reflection loops, and string-dispatched methods receive actionable guidance but no speculative rewrite.
+
+Build Pipeline owns these generic reflection/AOT diagnostics. It intentionally does not diagnose or rewrite Newtonsoft or other JSON APIs at source level. The future Serialization package owns JSON contract generation, serializer-specific diagnostics, and JSON-specific code fixes; the final-player verifier here remains the independent backstop.
+
 ### Modes
 
 `Audit` records findings in `deucarian-build-manifest.json` without blocking the build. This is the migration mode and the default for projects without settings.

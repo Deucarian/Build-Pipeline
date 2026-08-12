@@ -12,6 +12,8 @@
 - Added a target-aware command-line entry point with list, validate, and build actions plus machine-readable success and failure results.
 - Preserved the profile-based command-line entry point for existing automation while adding optional AOT enforcement.
 - Added Unity 6000 EditMode CI and focused coverage for AOT scanning, package evidence, generated linker output, target discovery, command parsing, and command results.
+- Added IDE-agnostic Roslyn diagnostics `DBP1001`-`DBP1005` for runtime discovery, reflection, runtime code generation, Unity string dispatch, and expression compilation, including deterministic quick fixes for direct construction and constant type lookup.
+- Added a licensed-Unity-independent analyzer build/test gate while keeping actual Unity compilation and EditMode execution as the required promotion gate.
 
 ## 0.4.0 - 2026-08-11
 
