@@ -148,6 +148,18 @@ namespace Deucarian.BuildPipeline
             return bool.TryParse(serialized, out value);
         }
 
+        internal bool TryGetString(string key, out string value)
+        {
+            value = null;
+            if (!scalarValues.TryGetValue(key, out string serialized))
+            {
+                return false;
+            }
+
+            value = serialized.Trim();
+            return true;
+        }
+
         internal bool TryGetSectionInt(string section, string key, out int value)
         {
             value = default;

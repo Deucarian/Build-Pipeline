@@ -15,6 +15,7 @@ namespace Deucarian.BuildPipeline.Tests
     {
         private const string TestFolder = "Assets/__DeucarianBuildPipelineTests";
         private const string TestProfilePath = TestFolder + "/WebGL.asset";
+        private const string TestTemplateName = "DeucarianBuildPipelineTests";
 
         [TearDown]
         public void TearDown()
@@ -22,6 +23,14 @@ namespace Deucarian.BuildPipeline.Tests
             if (AssetDatabase.IsValidFolder(TestFolder))
             {
                 AssetDatabase.DeleteAsset(TestFolder);
+            }
+
+            string templatePath =
+                DeucarianWebGLTemplateUtility.GetProjectTemplateAssetPath(
+                    TestTemplateName);
+            if (AssetDatabase.IsValidFolder(templatePath))
+            {
+                AssetDatabase.DeleteAsset(templatePath);
             }
         }
 
@@ -110,6 +119,63 @@ namespace Deucarian.BuildPipeline.Tests
                     out int stripping),
                 Is.True);
             Assert.That(stripping, Is.EqualTo((int)ManagedStrippingLevel.Minimal));
+        }
+
+        [Test]
+        public void PackageTemplateCanSynchronizeApplyAndValidatePassively()
+        {
+            string source = Path.Combine(
+                Application.dataPath,
+                "__DeucarianBuildPipelineTests",
+                "TemplateSource");
+            Directory.CreateDirectory(source);
+            File.WriteAllText(
+                Path.Combine(source, "index.html"),
+                "<!doctype html><title>Test</title>");
+            Directory.CreateDirectory(Path.Combine(source, "TemplateData"));
+            File.WriteAllText(
+                Path.Combine(source, "TemplateData", "style.css"),
+                "body { margin: 0; }");
+
+            BuildProfile profile = DeucarianBuildProfileUtility.CreateProfile(
+                BuildTarget.WebGL,
+                TestProfilePath);
+            new DeucarianWebGLBuildPolicy().ApplySettings(
+                profile,
+                DeucarianBuildEnvironment.Development);
+
+            string destination =
+                DeucarianWebGLTemplateUtility.SynchronizeTemplateDirectory(
+                    source,
+                    TestTemplateName);
+            DeucarianWebGLTemplateUtility.ApplyTemplate(
+                profile,
+                TestTemplateName);
+            BuildProfile activeBeforeValidation =
+                BuildProfile.GetActiveBuildProfile();
+
+            DeucarianBuildValidationResult result =
+                DeucarianWebGLTemplateUtility.ValidateTemplate(
+                    profile,
+                    TestTemplateName,
+                    new[] { "TemplateData/style.css" });
+
+            Assert.That(
+                destination,
+                Is.EqualTo(
+                    "Assets/WebGLTemplates/" + TestTemplateName));
+            Assert.That(result.IsValid, Is.True, result.Format("template"));
+            Assert.That(
+                BuildProfile.GetActiveBuildProfile(),
+                Is.SameAs(activeBeforeValidation));
+            Assert.That(
+                File.Exists(Path.Combine(
+                    Application.dataPath,
+                    "WebGLTemplates",
+                    TestTemplateName,
+                    "TemplateData",
+                    "style.css")),
+                Is.True);
         }
 
         [UnityTest]
