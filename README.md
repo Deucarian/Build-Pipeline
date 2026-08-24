@@ -71,6 +71,12 @@ native bridge never bypass it.
 
 The WebGL policy maps development to an inspectable build and production to Brotli, hashed filenames, data caching, High managed stripping, size-optimized IL2CPP, engine stripping, and WebAssembly 2023. Build And Run supplies `AutoRunPlayer` through its invocation instead of making every development build launch automatically. The policy leaves scenes, memory, rendering and quality assets, templates, identifiers, icons, and runtime content-loading behavior project-owned.
 
+Package-owned WebGL template sources can be synchronized into Unity's required
+project location with `DeucarianWebGLTemplateUtility.SynchronizePackageTemplate`.
+Consumer providers remain responsible for choosing the template: call
+`ApplyTemplate` while synchronizing each project-owned WebGL Build Profile and
+compose `ValidateTemplate` into the provider's project validation callback.
+
 ## Newtonsoft.Json and managed stripping
 
 Before Unity's managed linker runs, the package inspects the exact target player assemblies with Mono.Cecil. Types carrying Newtonsoft.Json serialization attributes, supported `System.Runtime.Serialization` contract attributes, and types referenced by those attributes are written to a deterministic descriptor under `Library/Deucarian/BuildPipeline/NewtonsoftLinker`. Each discovered contract uses `preserve="all"`, protecting constructors, accessors, fields, callbacks, and converters used through reflection. Missing or unreadable linker input stops the build instead of producing a potentially broken player.

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.0] - 2026-08-24
+
+### Added
+
+- Added package-to-project WebGL template synchronization with safe target
+  validation and stale-file cleanup.
+- Added Build Profile template selection and passive drift/file validation for
+  consumer-owned WebGL workflows.
+
 ## 0.4.0 - 2026-08-11
 
 - Added target-aware Newtonsoft.Json and data-contract discovery for the exact player script assemblies reported by Unity, including inherited member contracts and safe dependency resolution.
