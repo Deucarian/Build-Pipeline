@@ -198,9 +198,27 @@ namespace Deucarian.BuildPipeline
                 }
 
                 string next = current + "/" + parts[i];
+                if (!AssetDatabase.IsValidFolder(next)
+                    && System.IO.Directory.Exists(next))
+                {
+                    AssetDatabase.ImportAsset(
+                        next,
+                        ImportAssetOptions.ForceSynchronousImport);
+                }
+
                 if (!AssetDatabase.IsValidFolder(next))
                 {
-                    AssetDatabase.CreateFolder(current, parts[i]);
+                    string folderGuid = AssetDatabase.CreateFolder(
+                        current,
+                        parts[i]);
+                    if (string.IsNullOrWhiteSpace(folderGuid)
+                        || !AssetDatabase.IsValidFolder(next))
+                    {
+                        throw new InvalidOperationException(
+                            "Could not register Build Profile folder '"
+                            + next
+                            + "' in the Asset Database.");
+                    }
                 }
 
                 current = next;
