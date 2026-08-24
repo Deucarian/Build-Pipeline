@@ -3,6 +3,7 @@
   "displayName": "Deucarian Build Pipeline",
   "samplePolicy": "tool",
   "ownedCapabilities": [
+    "aot-stripping-safety",
     "build-pipeline"
   ],
   "runtimeAssemblies": [],
