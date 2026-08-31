@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1 - 2026-08-31
+
+- Registered the Build Manager and a sanitized active-profile validation card with Deucarian Control Center without adding an implicit build action.
+- Moved the standalone entry to `Tools/Deucarian/Build Manager...`.
+- Updated the shared editor dependency to `com.deucarian.editor` 1.2.0.
+
 ## [0.5.0] - 2026-08-24
 
 ### Added

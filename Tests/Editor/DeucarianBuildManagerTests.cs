@@ -37,7 +37,7 @@ namespace Deucarian.BuildPipeline.Tests
                 .Cast<MenuItem>()
                 .Select(item => item.menuItem)
                 .Where(path => path.StartsWith(
-                    DeucarianEditorUxStandards.MenuRoot + "/Tools and Quality/Build Pipeline",
+                    DeucarianEditorUxStandards.MenuRoot + "/Build Manager...",
                     StringComparison.Ordinal))
                 .ToArray();
 
