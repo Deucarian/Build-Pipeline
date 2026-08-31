@@ -2,7 +2,7 @@
 
 `com.deucarian.build-pipeline` is an editor-only Unity package for repeatable development and production builds. It keeps Build Profiles project-owned while centralizing the settings that should be consistent across Deucarian projects.
 
-Version 0.4.0 provides a single provider-driven Build Pipeline Manager with a static idle surface and debounced project-change validation. Registered Build Profiles also route Unity's native Build and Build And Run buttons through the same project callback. Target-specific Newtonsoft.Json contracts are preserved automatically when managed stripping runs. The public policy and provider interfaces are platform-neutral so Windows, Android, and iOS policies can be added without redesigning project integrations.
+Version 0.5.1 provides a single provider-driven Build Pipeline Manager with a static idle surface and debounced project-change validation. Registered Build Profiles also route Unity's native Build and Build And Run buttons through the same project callback. Target-specific Newtonsoft.Json contracts are preserved automatically when managed stripping runs. The public policy and provider interfaces are platform-neutral so Windows, Android, and iOS policies can be added without redesigning project integrations.
 
 ## Install
 
@@ -16,7 +16,7 @@ Unity 6.0 or newer is required. The package contains Editor assemblies only and 
 
 ## Build Pipeline Manager
 
-Open `Tools > Deucarian > Build Pipeline`. The manager discovers project providers through Unity `TypeCache`, presents their registered workflows, validates profile drift and project preflight rules, and dispatches builds through project-owned callbacks.
+Open `Tools > Deucarian > Build Manager...` or use the Build card in Deucarian Control Center. The manager discovers project providers through Unity `TypeCache`, presents their registered workflows, validates profile drift and project preflight rules, and dispatches builds through project-owned callbacks.
 
 Registered workflows also integrate with Unity's native `File > Build Profiles` window.
 When a registered profile is active, Unity's **Build** and **Build And Run** buttons
