@@ -119,6 +119,6 @@ namespace Deucarian.BuildPipeline
 
     internal static class DeucarianBuildPackage
     {
-        internal const string Version = "0.4.0";
+        internal const string Version = "0.5.1";
     }
 }
