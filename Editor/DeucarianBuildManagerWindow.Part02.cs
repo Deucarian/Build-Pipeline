@@ -226,56 +226,16 @@ namespace Deucarian.BuildPipeline
 
         private void ValidateCurrent(bool reportFeedback)
         {
-            DeucarianBuildValidationResult result = new DeucarianBuildValidationResult();
-            BuildProfile profile = SelectedProfile;
-            if (profile == null)
-            {
-                result.Add("The selected Build Profile is missing.");
-            }
-            else
-            {
-                try
-                {
-                    IDeucarianPlatformBuildPolicy policy = DeucarianBuildRunner.GetPolicy(profile);
-                    result.AddRange(policy.ValidateProfile(profile, SelectedEnvironment).Issues);
-                }
-                catch (Exception exception)
-                {
-                    result.Add(exception.GetBaseException().Message);
-                }
-            }
-
-            if (string.IsNullOrWhiteSpace(SelectedOutputPath))
-            {
-                result.Add("A build output path is required.");
-            }
-            else if (Path.IsPathRooted(SelectedOutputPath))
-            {
-                result.Add("The build output path must be project-relative.");
-            }
-
             DeucarianBuildManagerProviderEntry entry = SelectedEntry;
-            if (entry != null && entry.Target.ProjectValidation != null)
-            {
-                try
-                {
-                    DeucarianBuildValidationResult projectResult =
-                        entry.Target.ProjectValidation();
-                    if (projectResult == null)
-                    {
-                        result.Add("The project validation callback returned no result.");
-                    }
-                    else
-                    {
-                        result.AddRange(projectResult.Issues);
-                    }
-                }
-                catch (Exception exception)
-                {
-                    result.Add("Project validation failed: "
-                               + exception.GetBaseException().Message);
-                }
-            }
+            BuildProfile profile = SelectedProfile;
+            DeucarianBuildValidationResult result = ValidateBuildRequest(
+                profile,
+                SelectedEnvironment,
+                SelectedOutputPath,
+                entry != null
+                    ? entry.Target.DefaultBuildOptions
+                    : BuildOptions.None,
+                entry?.Target.ProjectValidation);
 
             currentValidation = result;
             DeucarianBuildControlCenterStatus.Publish(
@@ -311,6 +271,23 @@ namespace Deucarian.BuildPipeline
 
             UpdateActionState();
             Repaint();
+        }
+
+        internal static DeucarianBuildValidationResult ValidateBuildRequest(
+            BuildProfile profile,
+            DeucarianBuildEnvironment environment,
+            string outputPath,
+            BuildOptions buildOptions,
+            Func<DeucarianBuildValidationResult> projectValidation)
+        {
+            return DeucarianBuildDispatcher.ValidateRequest(
+                new DeucarianBuildRequest(
+                    profile,
+                    environment,
+                    outputPath,
+                    buildOptions),
+                projectValidation,
+                requireProjectRelativeOutput: true);
         }
 
         private void UpdateActionState()

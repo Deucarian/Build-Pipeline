@@ -220,6 +220,7 @@ namespace Deucarian.BuildPipeline.Tests
         public void RequestValidationRejectsMissingRequestAndOutput()
         {
             Assert.Throws<ArgumentNullException>(() => DeucarianBuildRunner.Build(null));
+            Assert.That(DeucarianBuildRunner.Validate(null).IsValid, Is.False);
 
             BuildProfile profile = DeucarianBuildProfileUtility.CreateProfile(
                 BuildTarget.WebGL,
@@ -230,6 +231,13 @@ namespace Deucarian.BuildPipeline.Tests
                         profile,
                         DeucarianBuildEnvironment.Development,
                         string.Empty)));
+            Assert.That(
+                DeucarianBuildRunner.Validate(
+                    new DeucarianBuildRequest(
+                        profile,
+                        DeucarianBuildEnvironment.Development,
+                        string.Empty)).IsValid,
+                Is.False);
         }
 
         [Test]
@@ -379,11 +387,14 @@ namespace Deucarian.BuildPipeline.Tests
             DeucarianBuildArtifactManifest manifest = CreatePassingProductionManifest();
             manifest.packageVersion = "0.2.0";
             manifest.unityVersion = Application.unityVersion;
+            manifest.buildProfileGuid = "profile-guid";
             manifest.settingsFingerprint = "abc123";
 
             string json = manifest.ToJson();
 
             StringAssert.Contains("\"packageVersion\": \"0.2.0\"", json);
+            StringAssert.Contains("\"schemaVersion\": 3", json);
+            StringAssert.Contains("\"buildProfileGuid\": \"profile-guid\"", json);
             StringAssert.Contains("\"settingsFingerprint\": \"abc123\"", json);
             StringAssert.Contains("\"passed\": true", json);
         }

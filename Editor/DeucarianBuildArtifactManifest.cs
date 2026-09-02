@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
@@ -10,12 +11,14 @@ namespace Deucarian.BuildPipeline
     public sealed class DeucarianBuildArtifactManifest
     {
         public const string FileName = "deucarian-build-manifest.json";
-        public const int CurrentSchemaVersion = 1;
+        public const int CurrentSchemaVersion = 3;
 
         public int schemaVersion = CurrentSchemaVersion;
         public string packageVersion;
         public string unityVersion;
         public string environment;
+        public string buildProfileGuid;
+        public string compatibilityFingerprint;
         public string buildGuid;
         public double durationSeconds;
         public string settingsFingerprint;
@@ -35,14 +38,38 @@ namespace Deucarian.BuildPipeline
             }
 
             Directory.CreateDirectory(outputDirectory);
-            File.WriteAllText(Path.Combine(outputDirectory, FileName), ToJson());
+            string manifestPath = Path.Combine(outputDirectory, FileName);
+            string temporaryPath = manifestPath + ".tmp";
+            try
+            {
+                if (File.Exists(temporaryPath))
+                {
+                    File.Delete(temporaryPath);
+                }
+
+                File.WriteAllText(temporaryPath, ToJson());
+                if (File.Exists(manifestPath))
+                {
+                    File.Delete(manifestPath);
+                }
+
+                File.Move(temporaryPath, manifestPath);
+            }
+            finally
+            {
+                if (File.Exists(temporaryPath))
+                {
+                    File.Delete(temporaryPath);
+                }
+            }
         }
 
         internal static DeucarianBuildArtifactManifest Create(
             DeucarianBuildRequest request,
             BuildReport report,
             string settingsFingerprint,
-            long bootstrapBudgetBytes)
+            long bootstrapBudgetBytes,
+            BuildOptions effectiveBuildOptions)
         {
             string outputFullPath = DeucarianBuildPathUtility.ToFullOutputPath(request.OutputPath);
             DeucarianBuildArtifactManifest manifest = new DeucarianBuildArtifactManifest
@@ -50,6 +77,11 @@ namespace Deucarian.BuildPipeline
                 packageVersion = DeucarianBuildPackage.Version,
                 unityVersion = Application.unityVersion,
                 environment = request.Environment.ToString(),
+                buildProfileGuid = GetBuildProfileGuid(request),
+                compatibilityFingerprint =
+                    DeucarianBuildCompatibility.CreateFingerprint(
+                        request,
+                        effectiveBuildOptions),
                 buildGuid = report.summary.guid.ToString(),
                 durationSeconds = report.summary.totalTime.TotalSeconds,
                 settingsFingerprint = settingsFingerprint
@@ -57,9 +89,17 @@ namespace Deucarian.BuildPipeline
 
             if (Directory.Exists(outputFullPath))
             {
-                string[] files = Directory.GetFiles(outputFullPath, "*", SearchOption.AllDirectories);
-                Array.Sort(files, StringComparer.Ordinal);
-                for (int i = 0; i < files.Length; i++)
+                if (!DeucarianBuildOutputPathSafety.TryCollectFiles(
+                        outputFullPath,
+                        out List<string> files,
+                        out string issue))
+                {
+                    throw new UnityEditor.Build.BuildFailedException(
+                        "Artifact manifest generation failed:\n- " + issue);
+                }
+
+                files.Sort(StringComparer.Ordinal);
+                for (int i = 0; i < files.Count; i++)
                 {
                     string relativePath = DeucarianBuildPathUtility.GetRelativePath(outputFullPath, files[i]);
                     if (string.Equals(relativePath, FileName, StringComparison.OrdinalIgnoreCase))
@@ -95,6 +135,20 @@ namespace Deucarian.BuildPipeline
                                      || encodedBootstrapBytes <= bootstrapBudgetBytes;
             return manifest;
         }
+
+        private static string GetBuildProfileGuid(DeucarianBuildRequest request)
+        {
+            if (request == null || request.BuildProfile == null)
+            {
+                return string.Empty;
+            }
+
+            string profilePath = UnityEditor.AssetDatabase.GetAssetPath(
+                request.BuildProfile);
+            return string.IsNullOrWhiteSpace(profilePath)
+                ? string.Empty
+                : UnityEditor.AssetDatabase.AssetPathToGUID(profilePath);
+        }
     }
 
     [Serializable]
@@ -119,6 +173,6 @@ namespace Deucarian.BuildPipeline
 
     internal static class DeucarianBuildPackage
     {
-        internal const string Version = "0.5.1";
+        internal const string Version = "0.6.0";
     }
 }

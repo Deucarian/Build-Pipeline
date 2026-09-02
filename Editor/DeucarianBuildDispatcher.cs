@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Profile;
@@ -38,6 +39,15 @@ namespace Deucarian.BuildPipeline
             {
                 throw new BuildFailedException(
                     "The registered Deucarian build callback returned no result.");
+            }
+
+            if (target.RequireCompleteResult
+                && (ReferenceEquals(result.BuildReport, null)
+                    || result.ArtifactManifest == null))
+            {
+                throw new BuildFailedException(
+                    "The registered Deucarian build callback did not return a complete "
+                    + "runner result with both a Build Report and artifact manifest.");
             }
 
             return result;
@@ -89,19 +99,45 @@ namespace Deucarian.BuildPipeline
                 return result;
             }
 
+            result.AddRange(ValidateRequest(
+                new DeucarianBuildRequest(
+                    invocation.BuildProfile,
+                    target.Environment,
+                    invocation.OutputPath,
+                    invocation.AdditionalBuildOptions),
+                target.ProjectValidation,
+                requireProjectRelativeOutput: false).Issues);
+            return result;
+        }
+
+        internal static DeucarianBuildValidationResult ValidateRequest(
+            DeucarianBuildRequest request,
+            Func<DeucarianBuildValidationResult> projectValidationCallback,
+            bool requireProjectRelativeOutput)
+        {
+            DeucarianBuildValidationResult result =
+                new DeucarianBuildValidationResult();
             try
             {
-                result.AddRange(
-                    DeucarianBuildRunner.GetPolicy(invocation.BuildProfile)
-                        .ValidateProfile(invocation.BuildProfile, target.Environment)
-                        .Issues);
+                result.AddRange(DeucarianBuildRunner.Validate(request).Issues);
             }
             catch (Exception exception)
             {
-                result.Add(exception.GetBaseException().Message);
+                result.Add(
+                    "Build validation failed ("
+                    + DeucarianBuildLifecycleDiscovery.GetExceptionName(exception)
+                    + ").");
             }
 
-            if (target.ProjectValidation == null)
+            if (requireProjectRelativeOutput
+                && request != null
+                && !string.IsNullOrWhiteSpace(request.OutputPath)
+                && Path.IsPathRooted(request.OutputPath))
+            {
+                result.Add("The build output path must be project-relative.");
+            }
+
+            if (projectValidationCallback == null)
             {
                 return result;
             }
@@ -109,7 +145,7 @@ namespace Deucarian.BuildPipeline
             try
             {
                 DeucarianBuildValidationResult projectValidation =
-                    target.ProjectValidation();
+                    projectValidationCallback();
                 if (projectValidation == null)
                 {
                     result.Add("The project validation callback returned no result.");

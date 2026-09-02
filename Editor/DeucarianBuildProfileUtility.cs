@@ -135,6 +135,84 @@ namespace Deucarian.BuildPipeline
             AssetDatabase.SaveAssets();
         }
 
+        /// <summary>
+        /// Explicitly persists the supported product-level Player Settings in
+        /// the supplied Build Profile's isolated override.
+        /// </summary>
+        public static void ApplyPlayerSettings(
+            BuildProfile profile,
+            DeucarianBuildProfilePlayerSettings settings)
+        {
+            if (profile == null)
+            {
+                throw new ArgumentNullException(nameof(profile));
+            }
+
+            if (settings == null)
+            {
+                throw new ArgumentNullException(nameof(settings));
+            }
+
+            EnsurePlayerSettingsOverride(profile);
+            using (ActivateTemporarily(profile))
+            {
+                PlayerSettings.bundleVersion = settings.BundleVersion;
+                PlayerSettings.runInBackground = settings.RunInBackground;
+                PlayerSettings.insecureHttpOption = settings.InsecureHttpOption;
+                PersistPlayerSettingsOverride(profile);
+            }
+
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>
+        /// Passively validates the supported product-level Player Settings by
+        /// reading the Build Profile's serialized override. The active Build
+        /// Profile is never changed by this method.
+        /// </summary>
+        public static DeucarianBuildValidationResult ValidatePlayerSettings(
+            BuildProfile profile,
+            DeucarianBuildProfilePlayerSettings expected)
+        {
+            DeucarianBuildValidationResult result =
+                new DeucarianBuildValidationResult();
+            if (expected == null)
+            {
+                result.Add("Expected Player Settings are required.");
+                return result;
+            }
+
+            if (!DeucarianBuildProfileSettingsSnapshot.TryCreate(
+                    profile,
+                    out DeucarianBuildProfileSettingsSnapshot snapshot,
+                    out string issue))
+            {
+                result.Add(issue);
+                return result;
+            }
+
+            ExpectString(
+                result,
+                snapshot,
+                "bundle version",
+                "bundleVersion",
+                expected.BundleVersion);
+            ExpectBool(
+                result,
+                snapshot,
+                "run in background",
+                "runInBackground",
+                expected.RunInBackground);
+            ExpectInt(
+                result,
+                snapshot,
+                "insecure HTTP policy",
+                "insecureHttpOption",
+                (int)expected.InsecureHttpOption);
+            return result;
+        }
+
         internal static void EnsurePlayerSettingsOverride(BuildProfile profile)
         {
             MethodInfo method = typeof(BuildProfile).GetMethod(
@@ -222,6 +300,63 @@ namespace Deucarian.BuildPipeline
                 }
 
                 current = next;
+            }
+        }
+
+        private static void ExpectBool(
+            DeucarianBuildValidationResult result,
+            DeucarianBuildProfileSettingsSnapshot snapshot,
+            string displayName,
+            string key,
+            bool expected)
+        {
+            if (!snapshot.TryGetBool(key, out bool actual))
+            {
+                result.Add(displayName + " could not be read from the Build Profile override.");
+            }
+            else if (actual != expected)
+            {
+                result.Add(
+                    displayName + " drifted: expected " + expected
+                    + ", found " + actual + ".");
+            }
+        }
+
+        private static void ExpectInt(
+            DeucarianBuildValidationResult result,
+            DeucarianBuildProfileSettingsSnapshot snapshot,
+            string displayName,
+            string key,
+            int expected)
+        {
+            if (!snapshot.TryGetInt(key, out int actual))
+            {
+                result.Add(displayName + " could not be read from the Build Profile override.");
+            }
+            else if (actual != expected)
+            {
+                result.Add(
+                    displayName + " drifted: expected " + expected
+                    + ", found " + actual + ".");
+            }
+        }
+
+        private static void ExpectString(
+            DeucarianBuildValidationResult result,
+            DeucarianBuildProfileSettingsSnapshot snapshot,
+            string displayName,
+            string key,
+            string expected)
+        {
+            if (!snapshot.TryGetString(key, out string actual))
+            {
+                result.Add(displayName + " could not be read from the Build Profile override.");
+            }
+            else if (!string.Equals(actual, expected, StringComparison.Ordinal))
+            {
+                result.Add(
+                    displayName + " drifted: expected '" + expected
+                    + "', found '" + actual + "'.");
             }
         }
     }
