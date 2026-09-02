@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Build.Profile;
 
 namespace Deucarian.BuildPipeline
@@ -48,12 +49,89 @@ namespace Deucarian.BuildPipeline
                 }
             }
 
-            DeucarianBuildRunner.Build(
-                new DeucarianBuildRequest(
+            Dispatch(
+                profile,
+                environment,
+                outputPath,
+                additionalOptions,
+                DeucarianBuildManagerDiscovery.Discover(),
+                DeucarianBuildRunner.Build);
+        }
+
+        internal static DeucarianBuildResult Dispatch(
+            BuildProfile profile,
+            DeucarianBuildEnvironment environment,
+            string outputPath,
+            BuildOptions additionalOptions,
+            DeucarianBuildManagerDiscoveryResult discovery,
+            Func<DeucarianBuildRequest, DeucarianBuildResult> unregisteredBuild)
+        {
+            if (profile == null)
+            {
+                throw new ArgumentNullException(nameof(profile));
+            }
+
+            if (discovery == null)
+            {
+                throw new BuildFailedException(
+                    "Registered build target discovery returned no result.");
+            }
+
+            if (discovery.Issues.Count > 0)
+            {
+                throw new BuildFailedException(
+                    "Registered build target discovery reported "
+                    + discovery.Issues.Count
+                    + " issue(s). Resolve build-provider discovery before "
+                    + "running command-line builds.");
+            }
+
+            var matches = DeucarianUnityBuildBridge.FindEntriesForProfile(
+                profile,
+                discovery);
+            if (matches.Count > 1)
+            {
+                throw new BuildFailedException(
+                    "Multiple registered build targets use the requested Build Profile. "
+                    + "Give every target its own profile before running CI.");
+            }
+
+            if (matches.Count == 0)
+            {
+                if (unregisteredBuild == null)
+                {
+                    throw new ArgumentNullException(nameof(unregisteredBuild));
+                }
+
+                return unregisteredBuild(new DeucarianBuildRequest(
                     profile,
                     environment,
                     outputPath,
                     additionalOptions));
+            }
+
+            DeucarianBuildManagerTarget target = matches[0].Target;
+            if (target.Environment != environment)
+            {
+                throw new BuildFailedException(
+                    "The requested command-line environment does not match the "
+                    + "registered target for this Build Profile.");
+            }
+
+            if (!target.SupportsInvocationOverrides)
+            {
+                throw new BuildFailedException(
+                    "The registered command-line build target uses the legacy "
+                    + "parameterless callback contract.");
+            }
+
+            return DeucarianBuildDispatcher.Build(
+                target,
+                new DeucarianBuildInvocation(
+                    profile,
+                    outputPath,
+                    additionalOptions,
+                    DeucarianBuildInvocationSource.CommandLine));
         }
 
         internal static void ValidateProfileArguments(

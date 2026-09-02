@@ -156,7 +156,7 @@ namespace Deucarian.BuildPipeline
                 .Count > 0;
         }
 
-        private static List<DeucarianBuildManagerProviderEntry> FindEntriesForProfile(
+        internal static List<DeucarianBuildManagerProviderEntry> FindEntriesForProfile(
             BuildProfile profile,
             DeucarianBuildManagerDiscoveryResult discovery)
         {

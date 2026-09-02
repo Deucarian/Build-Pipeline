@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.0 - 2026-09-02
+
+- Added a bounded public Build Profile Player Settings contract for explicit application and passive serialized validation of bundle version, background execution, and insecure-HTTP policy.
+- Added deterministic, product-neutral build lifecycle contributors with passive validation, reversible preparation, reverse-order restoration, and post-build artifact checks.
+- Added a public passive build-request validation facade shared by the Build Manager, dispatcher, and build execution, including actual invocation output and options.
+- Added explicit project-bound, ownership-safe output preparation, including request-compatible manifest-gated scripts-only builds, canonical root/traversal/link rejection, and conservative replacement rules.
+- Added an explicit lifecycle-aware output-preparation build entry point so scripts-only compatibility is checked while temporary contributor inputs exist; raw StreamingAssets bytes are fingerprinted without unstable generated Unity metadata.
+- Build success manifest schema 3 records Build Profile identity plus a compatibility fingerprint for profile, scene, data, and effective option inputs; stale success markers are invalidated before each attempt and replacements use a temporary-file publication step.
+- Registered command-line profiles now route through their exact invocation-aware target; discovery issues, ambiguous registrations, and incomplete callback results fail closed, while genuinely unregistered profiles retain the package-runner fallback.
+- Active lifecycle scopes restore before assembly reload and Editor shutdown; partial preparation and combined build/restoration failures retain original exception objects and stacks behind sanitized context.
+- Output preparation rejects the exact `Builds` root, Unity/repository control roots, and linked descendants; empty non-`Builds` directories remain intact, the full ancestor boundary is rechecked immediately before deletion, and artifact enumeration never follows filesystem links.
+- Added regression coverage for discovery, duplicate IDs, applicability, sanitized failures, ordering, partial and failed restoration, reload recovery, passive profile reads, compatibility drift, command-line routing, stale-manifest failure paths, and output/link safety.
+
 ## 0.5.1 - 2026-08-31
 
 - Registered the Build Manager and a sanitized active-profile validation card with Deucarian Control Center without adding an implicit build action.

@@ -7,11 +7,11 @@ https://github.com/Deucarian/Package-Registry/blob/main/ARCHITECTURE.md
 
 ## Ownership
 
-This package owns editor-only Build Profile policies, build execution, managed-linker preservation policies, artifact manifests, provider contracts, and the Build Pipeline Manager.
+This package owns editor-only Build Profile policies, build execution, managed-linker preservation policies, artifact manifests, provider contracts, generic build lifecycle contracts, ownership-safe output preparation, and the Build Pipeline Manager.
 
 Registered capability: `build-pipeline`.
 
-It must never own or name a consuming product, company application, scene, asset path, runtime context, content workflow, hosting system, or deployment repository. Consumer-specific build behavior belongs in a project-side `IDeucarianBuildManagerProvider` implementation.
+It must never own or name a consuming product, company application, scene, asset path, runtime context, content workflow, hosting system, or deployment repository. Product registration belongs in a consuming Editor package or project. Reusable domain packages may contribute product-neutral validation and reversible build preparation through `IDeucarianBuildLifecycleContributor`; they must select requests explicitly and remain free of consuming-product identifiers.
 
 ## Dependencies and policies
 
