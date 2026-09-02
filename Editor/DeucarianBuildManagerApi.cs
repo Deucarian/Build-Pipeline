@@ -89,7 +89,8 @@ namespace Deucarian.BuildPipeline
             string outputPath,
             Func<DeucarianBuildInvocation, DeucarianBuildResult> buildAction,
             Func<DeucarianBuildValidationResult> projectValidation = null,
-            BuildOptions defaultBuildOptions = BuildOptions.None)
+            BuildOptions defaultBuildOptions = BuildOptions.None,
+            bool requireCompleteResult = false)
         {
             Id = Require(id, nameof(id));
             DisplayName = Require(displayName, nameof(displayName));
@@ -101,6 +102,7 @@ namespace Deucarian.BuildPipeline
             ProjectValidation = projectValidation;
             Environment = environment;
             DefaultBuildOptions = defaultBuildOptions;
+            RequireCompleteResult = requireCompleteResult;
             SupportsInvocationOverrides = true;
             BuildAction = () => DeucarianBuildDispatcher.BuildDefault(this);
         }
@@ -116,7 +118,8 @@ namespace Deucarian.BuildPipeline
             DeucarianBuildEnvironment environment,
             string outputPath,
             Func<DeucarianBuildResult> buildAction,
-            Func<DeucarianBuildValidationResult> projectValidation = null)
+            Func<DeucarianBuildValidationResult> projectValidation = null,
+            bool requireCompleteResult = false)
             : this(
                 id,
                 displayName,
@@ -125,7 +128,9 @@ namespace Deucarian.BuildPipeline
                 environment,
                 outputPath,
                 invocation => buildAction(),
-                projectValidation)
+                projectValidation,
+                BuildOptions.None,
+                requireCompleteResult)
         {
             if (buildAction == null)
             {
@@ -148,6 +153,13 @@ namespace Deucarian.BuildPipeline
         public string OutputPath { get; }
 
         public BuildOptions DefaultBuildOptions { get; }
+
+        /// <summary>
+        /// Requires callbacks to return the complete result produced by the
+        /// shared runner. The default remains compatible with legacy callbacks
+        /// that return an opaque, non-null completion token.
+        /// </summary>
+        public bool RequireCompleteResult { get; }
 
         /// <summary>
         /// Compatibility entry point for callers using the pre-0.3 target contract.
