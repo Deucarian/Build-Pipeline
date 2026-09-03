@@ -23,18 +23,14 @@ namespace Deucarian.BuildPipeline.Tests
             TestFolder + "/Nested/StreamingAssets/LifecycleContext.json";
         private const string ScriptLikeStreamingDataPath =
             TestFolder + "/Nested/StreamingAssets/RuntimeCatalog.dll";
-        private const string CleanScenePath =
-            "Packages/com.deucarian.build-pipeline/Tests/Editor/Fixtures/"
-            + "CleanScene.unity";
-
         private readonly List<string> temporaryOutputs = new List<string>();
 
         [TearDown]
         public void TearDown()
         {
-            EditorSceneManager.OpenScene(
-                CleanScenePath,
-                OpenSceneMode.Single);
+            EditorSceneManager.NewScene(
+                NewSceneSetup.EmptyScene,
+                NewSceneMode.Single);
             if (AssetDatabase.IsValidFolder(TestFolder))
             {
                 AssetDatabase.DeleteAsset(TestFolder);
