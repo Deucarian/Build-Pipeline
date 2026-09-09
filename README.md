@@ -12,7 +12,7 @@ Reference the stable package channel in `Packages/manifest.json`:
 "com.deucarian.build-pipeline": "https://github.com/Deucarian/Build-Pipeline.git#main"
 ```
 
-Unity 6.0 or newer is required. The package contains Editor assemblies only and contributes nothing to a player build. It depends directly on `com.deucarian.editor` 1.2.0, `com.deucarian.logging` 1.0.4, and Unity's Editor-only `com.unity.nuget.mono-cecil` package.
+Unity 6.0 or newer is required. The package contains Editor assemblies only and contributes nothing to a player build. It depends directly on `com.deucarian.editor` 1.6.0, `com.deucarian.logging` 1.0.4, and Unity's Editor-only `com.unity.nuget.mono-cecil` package.
 
 ## Build Pipeline Manager
 
