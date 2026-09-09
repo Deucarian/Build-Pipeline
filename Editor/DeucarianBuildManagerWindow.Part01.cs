@@ -21,28 +21,10 @@ namespace Deucarian.BuildPipeline
                 return;
             }
 
-            DeucarianBuildManagerWindow window =
-                GetWindow<DeucarianBuildManagerWindow>(WindowTitle);
+            var window = DeucarianEditorWindowPages.ShowStandalone<DeucarianBuildManagerWindow>(
+                WindowTitle, new Vector2(640f, 440f));
             window.titleContent = DeucarianEditorIcons.GetPackageContent(
-                "editor",
-                WindowTitle,
-                "Manage project-registered and custom build workflows.");
-            window.minSize = new Vector2(640f, 440f);
-            window.Show();
-            window.Focus();
-        }
-
-        internal static void OpenWindowForEntry(
-            DeucarianBuildManagerProviderEntry entry)
-        {
-            if (entry == null)
-            {
-                OpenWindow();
-                return;
-            }
-
-            SessionState.SetString(SelectedTargetSessionKey, entry.Key);
-            OpenWindow();
+                "editor", WindowTitle, "Manage project-registered and custom build workflows.");
         }
 
         private void OnEnable()
@@ -70,16 +52,18 @@ namespace Deucarian.BuildPipeline
             buildButton = null;
         }
 
-        private void OnFocus()
+        internal void OnFocus()
         {
             AlignSelectionWithActiveProfile();
         }
 
-        public void CreateGUI()
+        public void CreateGUI() => BuildView(rootVisualElement);
+
+        internal void BuildView(VisualElement root)
         {
             workbench?.Dispose();
             workbench = DeucarianEditorWorkbench.Create(
-                rootVisualElement,
+                root,
                 new DeucarianEditorWorkbenchOptions
                 {
                     IncludeToolbar = true,

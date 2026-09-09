@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.6.1] - 2026-09-09
+
+- Register package tooling and navigation actions as shared Control Center pages. Preserve the domain workflow while using Editor-owned submenus, in-window navigation, and UI scaling.
+
 ## 0.6.0 - 2026-09-02
 
 - Added a bounded public Build Profile Player Settings contract for explicit application and passive serialized validation of bundle version, background execution, and insecure-HTTP policy.
