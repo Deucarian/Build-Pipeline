@@ -52,7 +52,7 @@ namespace Deucarian.BuildPipeline
             buildButton = null;
         }
 
-        private void OnFocus()
+        internal void OnFocus()
         {
             AlignSelectionWithActiveProfile();
         }

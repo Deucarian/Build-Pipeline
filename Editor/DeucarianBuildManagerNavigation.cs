@@ -7,7 +7,8 @@ namespace Deucarian.BuildPipeline
     {
         internal static IDeucarianEditorPage CreatePage() =>
             DeucarianEditorWorkspacePage.Create<DeucarianBuildManagerWindow>(
-                DeucarianToolIds.BuildManager, (window, content) => window.BuildView(content));
+                DeucarianToolIds.BuildManager, (window, content) => window.BuildView(content),
+                activate: (window, route) => window.OnFocus());
 
         internal static void OpenWindowForEntry(DeucarianBuildManagerProviderEntry entry)
         {
