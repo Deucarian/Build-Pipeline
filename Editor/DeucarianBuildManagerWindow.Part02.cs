@@ -24,7 +24,7 @@ namespace Deucarian.BuildPipeline
                     valid ? DeucarianEditorStatus.Success : DeucarianEditorStatus.Warning);
                 if (valid)
                 {
-                    EditorGUILayout.LabelField(
+                    DeucarianEditorTextGUI.LabelField(
                         "The profile policy and project preflight are valid.",
                         DeucarianEditorWorkbenchGUI.MutedMiniLabelStyle);
                     return;
@@ -32,13 +32,13 @@ namespace Deucarian.BuildPipeline
 
                 if (currentValidation == null || currentValidation.Issues.Count == 0)
                 {
-                    EditorGUILayout.HelpBox("Select a build target.", MessageType.Info);
+                    DeucarianEditorTextGUI.HelpBox("Select a build target.", MessageType.Info);
                     return;
                 }
 
                 for (int i = 0; i < currentValidation.Issues.Count; i++)
                 {
-                    EditorGUILayout.HelpBox(currentValidation.Issues[i], MessageType.Warning);
+                    DeucarianEditorTextGUI.HelpBox(currentValidation.Issues[i], MessageType.Warning);
                 }
             });
         }
@@ -51,7 +51,7 @@ namespace Deucarian.BuildPipeline
                     lastBuildResult != null ? lastBuildResult.ArtifactManifest : null;
                 if (manifest == null)
                 {
-                    EditorGUILayout.LabelField(
+                    DeucarianEditorTextGUI.LabelField(
                         "No build has completed in this manager session.",
                         DeucarianEditorWorkbenchGUI.MutedMiniLabelStyle);
                     return;
@@ -85,7 +85,7 @@ namespace Deucarian.BuildPipeline
             {
                 for (int i = 0; i < discoveryIssues.Count; i++)
                 {
-                    EditorGUILayout.HelpBox(discoveryIssues[i], MessageType.Warning);
+                    DeucarianEditorTextGUI.HelpBox(discoveryIssues[i], MessageType.Warning);
                 }
             });
         }
