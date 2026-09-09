@@ -23,7 +23,7 @@ namespace Deucarian.BuildPipeline
         internal const string ContentName = "deucarian-build-pipeline-content";
         internal const string FooterName = "deucarian-build-pipeline-footer";
 
-        private const string SelectedTargetSessionKey =
+        internal const string SelectedTargetSessionKey =
             "Deucarian.BuildPipeline.Manager.SelectedTarget";
         private const string WallpaperFadeName = "deucarian-build-pipeline-top-safe-fade";
         private const string CustomTargetLabel = "Custom Build Profile";

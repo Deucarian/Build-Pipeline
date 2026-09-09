@@ -21,7 +21,7 @@ namespace Deucarian.BuildPipeline
 
         private void RemoveAnimatedAmbientLayer()
         {
-            VisualElement ambientLayer = rootVisualElement.Q<VisualElement>(
+            VisualElement ambientLayer = workbench?.Root.Q<VisualElement>(
                 DeucarianEditorAmbientGlass.AmbientLayerName);
             ambientLayer?.RemoveFromHierarchy();
         }
