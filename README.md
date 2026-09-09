@@ -2,7 +2,7 @@
 
 `com.deucarian.build-pipeline` is an editor-only Unity package for repeatable development and production builds. It keeps Build Profiles project-owned while centralizing the settings that should be consistent across Deucarian projects.
 
-Version 0.6.1 provides a single provider-driven Build Pipeline Manager with a static idle surface and debounced project-change validation. Registered Build Profiles also route Unity's native Build and Build And Run buttons through the same project callback. Target-specific Newtonsoft.Json contracts are preserved automatically when managed stripping runs. Public profile-setting, lifecycle, output-safety, policy, and provider contracts let reusable Editor packages own shared build behavior without naming a consuming product.
+Version 0.6.2 provides a single provider-driven Build Pipeline Manager with a static idle surface and debounced project-change validation. Registered Build Profiles also route Unity's native Build and Build And Run buttons through the same project callback. Target-specific Newtonsoft.Json contracts are preserved automatically when managed stripping runs. Public profile-setting, lifecycle, output-safety, policy, and provider contracts let reusable Editor packages own shared build behavior without naming a consuming product.
 
 ## Install
 
