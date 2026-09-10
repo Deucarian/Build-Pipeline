@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.6.2] - 2026-09-09
+
+### Changed
+
+- Adopt the shared Editor 1.7 workspace presentation: neutral surfaces, readable typography, consistent actions and aligned controls.
+- Preserve package workflows and native serialized editing; this is an editor-only presentation update.
+
+## [0.6.1] - 2026-09-09
+
+- Register package tooling and navigation actions as shared Control Center pages. Preserve the domain workflow while using Editor-owned submenus, in-window navigation, and UI scaling.
+
 ## 0.6.0 - 2026-09-02
 
 - Added a bounded public Build Profile Player Settings contract for explicit application and passive serialized validation of bundle version, background execution, and insecure-HTTP policy.

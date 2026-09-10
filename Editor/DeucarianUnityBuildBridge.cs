@@ -39,7 +39,7 @@ namespace Deucarian.BuildPipeline
                 DeucarianBuildManagerDiscovery.Discover(),
                 ShowNotice,
                 BuildPlayerWindow.DefaultBuildMethods.BuildPlayer,
-                DeucarianBuildManagerWindow.OpenWindowForEntry,
+                DeucarianBuildManagerNavigation.OpenWindowForEntry,
                 ShowBlockedBuild);
         }
 
@@ -234,7 +234,7 @@ namespace Deucarian.BuildPipeline
                     "Open Pipeline Manager",
                     "Cancel"))
             {
-                DeucarianBuildManagerWindow.OpenWindowForEntry(entry);
+                DeucarianBuildManagerNavigation.OpenWindowForEntry(entry);
             }
         }
 
