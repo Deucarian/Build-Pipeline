@@ -22,7 +22,7 @@ namespace Deucarian.BuildPipeline
                 PackageId,
                 "build-settings.editor",
                 new[] { "build profile", "webgl", "validation", "artifact" },
-                20));
+                20, createPage: DeucarianBuildManagerNavigation.CreatePage, navigationPath: "Packages"));
             DeucarianControlCenterRegistry.RegisterCardProvider(
                 new DeucarianBuildCardProvider());
         }
@@ -216,7 +216,7 @@ namespace Deucarian.BuildPipeline
                     "build-pipeline.open-manager",
                     "Open Build Manager",
                     DeucarianBuildManagerWindow.OpenWindow,
-                    "Review validation before explicitly starting a build.")
+                    "Review validation before explicitly starting a build.", navigationToolId: DeucarianToolIds.BuildManager)
             };
             if (snapshot.HasActiveProfile)
             {

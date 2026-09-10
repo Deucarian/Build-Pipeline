@@ -21,28 +21,10 @@ namespace Deucarian.BuildPipeline
                 return;
             }
 
-            DeucarianBuildManagerWindow window =
-                GetWindow<DeucarianBuildManagerWindow>(WindowTitle);
+            var window = DeucarianEditorWindowPages.ShowStandalone<DeucarianBuildManagerWindow>(
+                WindowTitle, new Vector2(640f, 440f));
             window.titleContent = DeucarianEditorIcons.GetPackageContent(
-                "editor",
-                WindowTitle,
-                "Manage project-registered and custom build workflows.");
-            window.minSize = new Vector2(640f, 440f);
-            window.Show();
-            window.Focus();
-        }
-
-        internal static void OpenWindowForEntry(
-            DeucarianBuildManagerProviderEntry entry)
-        {
-            if (entry == null)
-            {
-                OpenWindow();
-                return;
-            }
-
-            SessionState.SetString(SelectedTargetSessionKey, entry.Key);
-            OpenWindow();
+                "editor", WindowTitle, "Manage project-registered and custom build workflows.");
         }
 
         private void OnEnable()
@@ -70,16 +52,18 @@ namespace Deucarian.BuildPipeline
             buildButton = null;
         }
 
-        private void OnFocus()
+        internal void OnFocus()
         {
             AlignSelectionWithActiveProfile();
         }
 
-        public void CreateGUI()
+        public void CreateGUI() => BuildView(rootVisualElement);
+
+        internal void BuildView(VisualElement root)
         {
             workbench?.Dispose();
             workbench = DeucarianEditorWorkbench.Create(
-                rootVisualElement,
+                root,
                 new DeucarianEditorWorkbenchOptions
                 {
                     IncludeToolbar = true,
@@ -312,7 +296,7 @@ namespace Deucarian.BuildPipeline
                     if (!string.IsNullOrWhiteSpace(target.Description))
                     {
                         GUILayout.Space(4f);
-                        EditorGUILayout.LabelField(
+                        DeucarianEditorTextGUI.LabelField(
                             target.Description,
                             DeucarianEditorWorkbenchGUI.MutedMiniLabelStyle);
                     }
@@ -323,10 +307,10 @@ namespace Deucarian.BuildPipeline
                     customProfile = DeucarianEditorFields.DrawAssetFieldWithSelectButton(
                         "Build Profile",
                         customProfile);
-                    customEnvironment = (DeucarianBuildEnvironment)EditorGUILayout.EnumPopup(
+                    customEnvironment = (DeucarianBuildEnvironment)DeucarianEditorInputGUI.EnumPopup(
                         "Environment",
                         customEnvironment);
-                    customOutputPath = EditorGUILayout.TextField("Output", customOutputPath);
+                    customOutputPath = DeucarianEditorInputGUI.TextField("Output", customOutputPath);
                     if (EditorGUI.EndChangeCheck())
                     {
                         ValidateCurrent(false);
@@ -339,10 +323,10 @@ namespace Deucarian.BuildPipeline
         {
             DeucarianEditorWorkbenchGUI.DrawPanel("Actions", () =>
             {
-                EditorGUILayout.LabelField(
+                DeucarianEditorTextGUI.LabelField(
                     "For a normal build: Validate, then Build.",
-                    EditorStyles.boldLabel);
-                EditorGUILayout.HelpBox(
+                    DeucarianEditorWorkbenchGUI.BoldLabelStyle);
+                DeucarianEditorTextGUI.HelpBox(
                     "Sync Profiles — Create or refresh all profiles registered by the project; "
                     + "changes profile assets.\n"
                     + "Apply Policy — Update only the selected profile's environment settings; "
@@ -363,13 +347,13 @@ namespace Deucarian.BuildPipeline
                 DeucarianEditorFields.DrawReadonlyTextField("Build Profile", assetPath);
                 using (new EditorGUI.DisabledScope(profile == null))
                 {
-                    if (GUILayout.Button("Select", GUILayout.Width(72f)))
+                    if (DeucarianEditorActionGUI.Button("Select", GUILayout.Width(72f)))
                     {
                         Selection.activeObject = profile;
                         EditorGUIUtility.PingObject(profile);
                     }
 
-                    if (GUILayout.Button("Open in Unity", GUILayout.Width(104f)))
+                    if (DeucarianEditorActionGUI.Button("Open in Unity", GUILayout.Width(104f)))
                     {
                         BuildProfile.SetActiveBuildProfile(profile);
                         BuildPlayerWindow.ShowBuildPlayerWindow();
