@@ -138,7 +138,7 @@ namespace Deucarian.BuildPipeline
             return paths;
         }
 
-        private static EditorBuildSettingsScene[] GetEffectiveScenes(
+        internal static EditorBuildSettingsScene[] GetEffectiveScenes(
             BuildProfile profile)
         {
             SerializedObject serializedProfile = new SerializedObject(profile);

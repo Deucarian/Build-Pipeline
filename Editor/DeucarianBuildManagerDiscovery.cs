@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 
 namespace Deucarian.BuildPipeline
@@ -24,7 +25,9 @@ namespace Deucarian.BuildPipeline
     {
         public static DeucarianBuildManagerDiscoveryResult Discover()
         {
-            return DiscoverFromTypes(TypeCache.GetTypesDerivedFrom<IDeucarianBuildManagerProvider>());
+            return DiscoverFromTypes(TypeCache.GetTypesDerivedFrom<IDeucarianBuildManagerProvider>()
+                .Where(type => !type.Assembly.GetReferencedAssemblies().Any(
+                    reference => string.Equals(reference.Name, "nunit.framework", StringComparison.OrdinalIgnoreCase))));
         }
 
         internal static DeucarianBuildManagerDiscoveryResult DiscoverFromTypes(

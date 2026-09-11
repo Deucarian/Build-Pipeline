@@ -47,84 +47,31 @@ namespace Deucarian.BuildPipeline.Tests
         }
 
         [Test]
-        public void WorkbenchContainsStableToolbarContentAndFooter()
+        public void NativeWorkspaceKeepsBuildActionsInConfigurationAndPolicyActionsAdvanced()
         {
-            DeucarianBuildManagerWindow window =
-                ScriptableObject.CreateInstance<DeucarianBuildManagerWindow>();
+            var window = ScriptableObject.CreateInstance<DeucarianBuildManagerWindow>();
             try
             {
                 window.CreateGUI();
-
-                Assert.That(window.WorkbenchForTests, Is.Not.Null);
-                Assert.That(window.FooterForTests, Is.Not.Null);
-                Assert.That(window.minSize.x, Is.GreaterThanOrEqualTo(640f));
-                Assert.That(
-                    window.rootVisualElement.Q<PopupField<string>>(
-                        DeucarianBuildManagerWindow.TargetPopupName),
-                    Is.Not.Null);
-                Assert.That(
-                    window.rootVisualElement.Q<Button>(
-                        DeucarianBuildManagerWindow.SyncButtonName),
-                    Is.Not.Null);
-                Assert.That(
-                    window.rootVisualElement.Q<Button>(
-                        DeucarianBuildManagerWindow.ApplyButtonName),
-                    Is.Not.Null);
-                Assert.That(
-                    window.rootVisualElement.Q<Button>(
-                        DeucarianBuildManagerWindow.ValidateButtonName),
-                    Is.Not.Null);
-                Assert.That(
-                    window.rootVisualElement.Q<Button>(
-                        DeucarianBuildManagerWindow.BuildButtonName),
-                    Is.Not.Null);
-                Assert.That(
-                    window.rootVisualElement.Q<Button>(
-                            DeucarianBuildManagerWindow.SyncButtonName)
-                        .ClassListContains(
-                            DeucarianEditorWorkbenchToolbar.StandardActionClass),
-                    Is.True);
-                Assert.That(
-                    window.rootVisualElement.Q<Button>(
-                            DeucarianBuildManagerWindow.BuildButtonName)
-                        .ClassListContains(
-                            DeucarianEditorWorkbenchToolbar.EmphasizedActionClass),
-                    Is.True);
-                VisualElement toolbar = window.WorkbenchForTests.Toolbar;
-                Assert.That(
-                    toolbar.ClassListContains(
-                        DeucarianEditorWorkbenchToolbar.StableActionLanesClass),
-                    Is.True);
-                VisualElement actionLane = toolbar.Q<VisualElement>(
-                    className: DeucarianEditorCommandBar.ActionGroupClass);
-                Assert.That(actionLane, Is.Not.Null);
-                Assert.That(
-                    actionLane.Children().OfType<Button>().Select(button => button.name),
-                    Is.EqualTo(new[]
-                    {
-                        DeucarianBuildManagerWindow.SyncButtonName,
-                        DeucarianBuildManagerWindow.ApplyButtonName,
-                        DeucarianBuildManagerWindow.ValidateButtonName,
-                        DeucarianBuildManagerWindow.BuildButtonName
-                    }));
-                Assert.That(
-                    window.rootVisualElement.Q<Button>(
-                        DeucarianBuildManagerWindow.SyncButtonName).text,
-                    Is.EqualTo("Sync Profiles"));
-                Assert.That(
-                    window.rootVisualElement.Q<VisualElement>(
-                        DeucarianBuildManagerWindow.ContentName),
-                    Is.Not.Null);
-                Assert.That(
-                    window.rootVisualElement.Q<VisualElement>(
-                        DeucarianBuildManagerWindow.FooterName),
-                    Is.Not.Null);
-                Assert.That(window.HasAmbientAnimationForTests, Is.False);
+                var root = window.rootVisualElement;
+                Assert.That(root.Q(className: "deucarian-workspace"), Is.Not.Null);
+                Assert.That(root.Query<IMGUIContainer>().ToList(), Is.Empty);
+                Assert.That(root.Q<PopupField<string>>(DeucarianBuildManagerWindow.TargetPopupName), Is.Not.Null);
+                var build = root.Q<Button>(DeucarianBuildManagerWindow.BuildButtonName);
+                var validate = root.Q<Button>(DeucarianBuildManagerWindow.ValidateButtonName);
+                Assert.That(build.ClassListContains("dw-primary"), Is.True);
+                Assert.That(build.parent, Is.SameAs(validate.parent));
+                Assert.That(root.Q<VisualElement>("build-configuration").Contains(build), Is.True);
+                var sync = root.Q<Button>(DeucarianBuildManagerWindow.SyncButtonName);
+                var apply = root.Q<Button>(DeucarianBuildManagerWindow.ApplyButtonName);
+                Assert.That(sync.GetFirstAncestorOfType<Foldout>(), Is.SameAs(apply.GetFirstAncestorOfType<Foldout>()));
+                Assert.That(sync.GetFirstAncestorOfType<Foldout>().value, Is.False);
+                Assert.That(root.Q("build-last"), Is.Not.Null);
+                Assert.That(window.ValidationForTests, Is.Not.Null);
+                Assert.That(window.minSize.x, Is.GreaterThanOrEqualTo(640));
+                Assert.That(window.LastBuild, Is.Null, "Opening the page must not run a build.");
             }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(window);
-            }
+            finally { UnityEngine.Object.DestroyImmediate(window); }
         }
 
         [Test]
@@ -163,6 +110,14 @@ namespace Deucarian.BuildPipeline.Tests
             {
                 UnityEngine.Object.DestroyImmediate(window);
             }
+        }
+
+        [Test]
+        public void AutomaticDiscoveryDoesNotExposeTestProvidersAsProjectWorkflows()
+        {
+            var discovery = DeucarianBuildManagerDiscovery.Discover();
+            Assert.That(discovery.Entries.Any(entry => entry.Provider.GetType().Assembly == typeof(EarlierProvider).Assembly), Is.False);
+            Assert.That(discovery.Issues.Any(issue => issue.Contains(nameof(ThrowingConstructorProvider))), Is.False);
         }
 
         [Test]
