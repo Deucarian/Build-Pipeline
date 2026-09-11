@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.6.3] - 2026-09-11
+
+- Present build profiles, readiness and primary actions in a native workspace while preserving policy checks, advanced settings and build operations.
+- Require Editor 1.10.6 for the shared native controls, typography, responsive layouts and accessible interaction states.
+
 ## [0.6.2] - 2026-09-09
 
 ### Changed
