@@ -12,7 +12,7 @@ Reference the stable package channel in `Packages/manifest.json`:
 "com.deucarian.build-pipeline": "https://github.com/Deucarian/Build-Pipeline.git#main"
 ```
 
-Unity 6.0 or newer is required. The package contains Editor assemblies only and contributes nothing to a player build. It depends directly on `com.deucarian.editor` 1.10.6, `com.deucarian.logging` 1.0.4, and Unity's Editor-only `com.unity.nuget.mono-cecil` package.
+Unity 6.0 or newer is required. The package contains Editor assemblies only and contributes nothing to a player build. It depends directly on `com.deucarian.editor` 1.12.0, `com.deucarian.logging` 1.0.4, and Unity's Editor-only `com.unity.nuget.mono-cecil` package.
 
 ## Build Pipeline Manager
 
@@ -186,3 +186,9 @@ The WebGL production gate rejects development options, drifted profiles, raw gen
 For startup benchmarking, use seven cold evergreen-Chromium runs at 20 Mbps, 40 ms RTT, and 4x CPU throttling. Compare median `page-start` to `engine-ready`; post-engine content belongs to a separate project-owned measurement. A production candidate must improve the preserved baseline by at least 40%.
 
 Before changing production IL2CPP from Optimize Size to Faster Runtime, compare a representative workload over the same scripted 30-second interaction sequence. Switch only when Optimize Size increases p95 frame time by more than 5%.
+
+## Definition authoring integration
+
+Definition synchronization is validated before player builds by the owning Editor package. Resolve stale, missing or conflicted definitions before building; profile policy and build execution remain owned here.
+
+See the [shared authoring walkthrough](https://github.com/Deucarian/Editor/blob/develop/Documentation~/DefinitionAuthoring.md). Runtime packages expose their **Definition Workflow** sample through Package Manager.

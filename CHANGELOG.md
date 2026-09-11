@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.5] - 2026-09-11
+
+- Document how shared definition validation runs before final player and AOT inspection; align development dependency versions.
+- Align declared package dependencies with the definition-authoring development wave.
+
+
 ## [0.6.4] - 2026-09-11
 
 - Guide the Build Manager workflow with profile/check/build steps, contextual next actions and an optional quick-start guide.
