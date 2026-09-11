@@ -37,6 +37,9 @@ namespace Deucarian.BuildPipeline
         private readonly Button openOutput;
         private readonly Label feedback;
         private readonly Foldout sceneDetails;
+        private readonly Label nextStep;
+        private readonly Button chooseUnityProfile;
+        private readonly DeucarianEditorSteps steps;
         internal Button BuildButton { get; }
 
         internal DeucarianBuildManagerView(VisualElement root, DeucarianBuildManagerWindow owner)
@@ -44,7 +47,7 @@ namespace Deucarian.BuildPipeline
             this.owner = owner;
             workspace = new DeucarianEditorWorkspace(root, Application.productName);
             workspace.Title.text = "Build Manager";
-            workspace.Subtitle.text = "Choose a profile. Check it. Build.";
+            workspace.Subtitle.text = "Validate Unity Build Profiles and create local application builds.";
             DeucarianEditorWorkspaceNavigation.Populate(workspace, DeucarianToolIds.BuildManager);
             targets = new PopupField<string>(new List<string>(owner.TargetLabels), owner.SelectedIndex)
                 { name = DeucarianBuildManagerWindow.TargetPopupName };
@@ -54,6 +57,9 @@ namespace Deucarian.BuildPipeline
             workspace.Scope.Add(platform);
             var scroll = Controls.Scroll(DeucarianBuildManagerWindow.ContentName);
             workspace.Content.Add(scroll);
+            steps = new DeucarianEditorSteps("Choose profile", "Check settings", "Build locally");
+            steps.Root.name = "build-workflow-steps";
+            scroll.Add(steps.Root);
             configuration = Controls.Panel("build-configuration");
             scroll.Add(configuration);
             var body = new VisualElement();
@@ -62,6 +68,12 @@ namespace Deucarian.BuildPipeline
             statusIcon = status.Q(className: "dw-icon");
             heading = Controls.Label(string.Empty, "dw-feature-title");
             body.Add(heading);
+            nextStep = Controls.Label(string.Empty, "dw-note");
+            nextStep.name = "build-next-step";
+            body.Add(nextStep);
+            chooseUnityProfile = Controls.Button("Open Unity Build Profiles", BuildPlayerWindow.ShowBuildPlayerWindow);
+            chooseUnityProfile.name = "build-open-profiles";
+            body.Add(Controls.Actions(chooseUnityProfile));
             configuration.Add(status);
             form = new DeucarianEditorWorkspaceForm(body);
             var asset = form.Asset("build-custom-profile", "Build profile", typeof(BuildProfile),
@@ -105,6 +117,15 @@ namespace Deucarian.BuildPipeline
             sceneDetails = new Foldout { text = "Scene paths", value = false };
             sceneDetails.AddToClassList("dw-foldout");
             advanced.Add(sceneDetails);
+            var guide = new Foldout { text = "How builds work", value = false, name = "build-quick-start" };
+            guide.AddToClassList("dw-foldout");
+            guide.Add(Controls.Label("1. Choose a registered workflow, or select a custom Unity Build Profile. The profile owns the platform and included scenes.", "dw-note"));
+            guide.Add(Controls.Label("2. Check the output folder and Development build setting, then Validate. Resolve the listed issues; validation does not change project assets.", "dw-note"));
+            guide.Add(Controls.Label("3. Build creates local files in the output folder. It does not upload, deploy or change API environments. Open output appears after a successful build.", "dw-note"));
+            guide.Add(Controls.Label("Development build controls debugging settings, not your backend environment. Apply policy updates only the selected profile; Sync profiles updates a registered provider's profiles. Both require confirmation.", "dw-note"));
+            guide.Add(Controls.Button("Read build guide", () =>
+                AssetDatabase.OpenAsset(AssetDatabase.LoadMainAssetAtPath("Packages/com.deucarian.build-pipeline/README.md"))));
+            scroll.Add(guide);
             lastRow = Controls.Panel("build-last");
             lastRow.AddToClassList("dw-summary-row");
             lastRow.Add(Controls.Label("Last build", "dw-field-label"));
@@ -134,6 +155,12 @@ namespace Deucarian.BuildPipeline
             development.SetEnabled(custom);
             if (!custom) output.tooltip = development.tooltip = "Owned by the selected workflow provider. Choose a different profile to change its configuration.";
             bool valid = owner.Validation.IsValid;
+            steps.SetCurrent(owner.SelectedProfile == null ? 0 : valid ? 2 : 1);
+            nextStep.text = owner.SelectedProfile == null
+                ? "Choose a workflow above or assign a custom Build Profile. Create a profile in Unity if this project has none."
+                : valid ? "Ready. Build creates local files in the selected output folder; it does not deploy them."
+                : "Resolve the issues below, then Validate again. Apply policy is under Advanced settings if the profile needs updating.";
+            Controls.Show(chooseUnityProfile.parent, owner.SelectedProfile == null);
             var status = owner.FeedbackStatus;
             heading.text = owner.IsBuilding ? "Building…" : status == DeucarianEditorStatus.Error
                 ? "Action failed" : valid ? "Ready to build" : owner.SelectedProfile == null ? "Choose a build profile" : "Action required";
