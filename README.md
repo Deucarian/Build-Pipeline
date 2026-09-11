@@ -2,7 +2,7 @@
 
 `com.deucarian.build-pipeline` is an editor-only Unity package for repeatable development and production builds. It keeps Build Profiles project-owned while centralizing the settings that should be consistent across Deucarian projects.
 
-Version 0.6.2 provides a single provider-driven Build Pipeline Manager with a static idle surface and debounced project-change validation. Registered Build Profiles also route Unity's native Build and Build And Run buttons through the same project callback. Target-specific Newtonsoft.Json contracts are preserved automatically when managed stripping runs. Public profile-setting, lifecycle, output-safety, policy, and provider contracts let reusable Editor packages own shared build behavior without naming a consuming product.
+Version 0.6.4 provides a single provider-driven Build Pipeline Manager with a static idle surface and debounced project-change validation. Registered Build Profiles also route Unity's native Build and Build And Run buttons through the same project callback. Target-specific Newtonsoft.Json contracts are preserved automatically when managed stripping runs. Public profile-setting, lifecycle, output-safety, policy, and provider contracts let reusable Editor packages own shared build behavior without naming a consuming product.
 
 ## Install
 
@@ -15,6 +15,38 @@ Reference the stable package channel in `Packages/manifest.json`:
 Unity 6.0 or newer is required. The package contains Editor assemblies only and contributes nothing to a player build. It depends directly on `com.deucarian.editor` 1.10.6, `com.deucarian.logging` 1.0.4, and Unity's Editor-only `com.unity.nuget.mono-cecil` package.
 
 ## Build Pipeline Manager
+
+### First build
+
+This page creates **local application build files**. It does not install packages,
+start a backend, upload files or deploy your application.
+
+1. Choose a registered workflow in **Profile**. If none exists, choose **Custom
+   Build Profile**, then assign a profile asset. **Open Unity Build Profiles**
+   opens Unity's profile window so you can create one and choose its platform and scenes.
+2. For a custom profile, choose a project-relative output folder such as
+   `Builds/Development` and the requested **Development build** setting. This
+   setting controls build/debugging policy, **not** your API/backend environment.
+3. Select **Validate**. It checks the profile, scenes, active platform, output
+   safety and any registered project checks without changing assets.
+4. Resolve the listed issues. **Advanced settings → Apply policy** changes only
+   the selected profile after confirmation. Change the active build platform in
+   Unity when required; validation never switches it automatically.
+5. Select **Build**. After success, use **Open output** to inspect the local files.
+   Deploy them separately using your project's approved process.
+
+| Action | Purpose | Changes project assets? |
+| --- | --- | --- |
+| Validate | Check readiness without running a build | No |
+| Build | Validate, then create local build output | Does not silently edit profiles; writes build output |
+| Apply policy | Apply requested settings to the selected profile | Yes, after confirmation |
+| Sync profiles | Create/update profiles supplied by a registered workflow | Yes, after confirmation |
+| Open in Unity | Activate the selected profile and open Unity's profile window | Changes the active profile |
+
+If **Build** is disabled, follow the readiness message above the form. Missing
+profile, scene, platform or output settings must be resolved first. A greyed-out
+field in a registered workflow belongs to its provider; choose a different
+workflow or use a custom profile instead of modifying generated defaults.
 
 Open `Tools > Deucarian > Build Manager...` or use the Build card in Deucarian Control Center. The manager discovers project providers through Unity `TypeCache`, presents their registered workflows, validates profile drift and project preflight rules, and dispatches builds through project-owned callbacks.
 

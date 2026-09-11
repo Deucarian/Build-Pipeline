@@ -16,7 +16,7 @@ namespace Deucarian.BuildPipeline
             DeucarianToolRegistry.Register(new DeucarianToolDescriptor(
                 DeucarianToolIds.BuildManager,
                 "Build Manager",
-                "Validate and run project-owned build workflows.",
+                "Validate Unity Build Profiles and create local application builds.",
                 DeucarianControlCenterArea.BuildAndPackages,
                 DeucarianBuildManagerWindow.OpenWindow,
                 PackageId,

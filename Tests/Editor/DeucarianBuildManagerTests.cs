@@ -67,6 +67,14 @@ namespace Deucarian.BuildPipeline.Tests
                 Assert.That(sync.GetFirstAncestorOfType<Foldout>(), Is.SameAs(apply.GetFirstAncestorOfType<Foldout>()));
                 Assert.That(sync.GetFirstAncestorOfType<Foldout>().value, Is.False);
                 Assert.That(root.Q("build-last"), Is.Not.Null);
+                Assert.That(root.Q("build-workflow-steps"), Is.Not.Null);
+                Assert.That(root.Q<Label>("build-next-step").text, Is.Not.Empty);
+                var guide = root.Q<Foldout>("build-quick-start");
+                Assert.That(guide, Is.Not.Null);
+                Assert.That(guide.value, Is.False);
+                Assert.That(string.Join(" ", guide.Query<Label>().ToList().Select(label => label.text)),
+                    Does.Contain("does not upload, deploy or change API environments"));
+                Assert.That(root.Q<Button>("build-open-profiles"), Is.Not.Null);
                 Assert.That(window.ValidationForTests, Is.Not.Null);
                 Assert.That(window.minSize.x, Is.GreaterThanOrEqualTo(640));
                 Assert.That(window.LastBuild, Is.Null, "Opening the page must not run a build.");
