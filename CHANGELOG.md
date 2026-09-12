@@ -1,5 +1,9 @@
 # Changelog
 
+## Asset workflow — Unreleased
+
+- Add shared package-aware custom Build Profile selection and explicit create/customize actions without starting a build.
+
 ## [0.6.5] - 2026-09-11
 
 - Document how shared definition validation runs before final player and AOT inspection; align development dependency versions.
