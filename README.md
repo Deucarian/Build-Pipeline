@@ -1,5 +1,9 @@
 # Deucarian Build Pipeline
 
+## Asset selection and project defaults
+
+Custom Build Profile selection offers Choose, Create and Customize in the shared workspace style. Create uses the current Unity build target and asks for a new project asset path; it does not start a build or select a backend environment. Registered workflow profiles keep their existing ownership. Validate, Apply policy and Build remain separate operations.
+
 `com.deucarian.build-pipeline` is an editor-only Unity package for repeatable development and production builds. It keeps Build Profiles project-owned while centralizing the settings that should be consistent across Deucarian projects.
 
 Version 0.6.4 provides a single provider-driven Build Pipeline Manager with a static idle surface and debounced project-change validation. Registered Build Profiles also route Unity's native Build and Build And Run buttons through the same project callback. Target-specific Newtonsoft.Json contracts are preserved automatically when managed stripping runs. Public profile-setting, lifecycle, output-safety, policy, and provider contracts let reusable Editor packages own shared build behavior without naming a consuming product.

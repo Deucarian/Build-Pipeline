@@ -76,9 +76,16 @@ namespace Deucarian.BuildPipeline
             body.Add(Controls.Actions(chooseUnityProfile));
             configuration.Add(status);
             form = new DeucarianEditorWorkspaceForm(body);
-            var asset = form.Asset("build-custom-profile", "Build profile", typeof(BuildProfile),
-                () => owner.CustomProfile, value => { owner.CustomProfile = value as BuildProfile; owner.ValidateCurrent(false); });
-            customProfileRow = asset.parent;
+            form.AssetWithActions("build-custom-profile", "Build profile", typeof(BuildProfile),
+                () => owner.CustomProfile, value => { owner.CustomProfile = value as BuildProfile; owner.ValidateCurrent(false); },
+                create: () =>
+                {
+                    string path = EditorUtility.SaveFilePanelInProject("Create build profile", "Development Build", "asset", "Creates a profile for the current Unity build target. No build is started.");
+                    if (string.IsNullOrEmpty(path)) return null;
+                    if (!DeucarianEditorAssetCatalog.IsUnusedProjectPath(path)) throw new ArgumentException("Choose a new project .asset path.");
+                    return DeucarianBuildProfileUtility.CreateProfile(EditorUserBuildSettings.activeBuildTarget, path);
+                }, customize: DeucarianEditorAssetCatalog.CopyToProject);
+            customProfileRow = form.Root.Q("build-custom-profile-asset-control").parent;
             output = form.Text("build-output", "Output folder", () => owner.OutputPath,
                 value => { owner.CustomOutputPath = value; owner.ValidateCurrent(false); });
             output.isDelayed = true;
