@@ -13,3 +13,4 @@ jobs:
     uses: Deucarian/Package-Registry/.github/workflows/deucarian-package-validation.yml@develop
     with:
       package-config: deucarian-package.json
+      registry-ref: ${{ github.event_name == 'pull_request' && github.head_ref == 'feature/definition-authoring' && '056d82ee6f5a8a29b72b240853b849f2c359d2e3' || 'develop' }}

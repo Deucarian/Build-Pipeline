@@ -1,5 +1,26 @@
 # Changelog
 
+## Asset workflow — Unreleased
+
+- Add shared package-aware custom Build Profile selection and explicit create/customize actions without starting a build.
+
+## [0.6.5] - 2026-09-11
+
+- Document how shared definition validation runs before final player and AOT inspection; align development dependency versions.
+- Align declared package dependencies with the definition-authoring development wave.
+
+
+## [0.6.4] - 2026-09-11
+
+- Guide the Build Manager workflow with profile/check/build steps, contextual next actions and an optional quick-start guide.
+- Explain local build output, policy changes and the distinction between Development build and backend environments without changing build behavior.
+- Use Editor 1.11.0 for consistently sized actions and persistent Advanced navigation.
+
+## [0.6.3] - 2026-09-11
+
+- Present build profiles, readiness and primary actions in a native workspace while preserving policy checks, advanced settings and build operations.
+- Require Editor 1.10.6 for the shared native controls, typography, responsive layouts and accessible interaction states.
+
 ## [0.6.2] - 2026-09-09
 
 ### Changed
