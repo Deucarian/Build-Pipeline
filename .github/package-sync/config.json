@@ -1,0 +1,16 @@
+{
+  "githubRepository": "Deucarian/Build-Pipeline",
+  "committer": {
+    "name": "jhoevenberg",
+    "email": "j.hoevenberg@simultria.nl"
+  },
+  "validationWorkflow": "package-validation.yml",
+  "requiredChecks": [
+    "Shared package validation / Validate package"
+  ],
+  "mergeAfterValidation": true,
+  "channels": [
+    "main",
+    "develop"
+  ]
+}

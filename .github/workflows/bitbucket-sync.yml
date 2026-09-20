@@ -1,0 +1,27 @@
+name: Pull package updates from Bitbucket
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "43 * * * *"
+  workflow_run:
+    workflows: ["Package Validation"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: bitbucket-package-synchronization
+  cancel-in-progress: false
+
+jobs:
+  synchronize:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    uses: Deucarian/Package-Registry/.github/workflows/package-synchronization.yml@14cdbdc4b205697dff67ff10b1f9d8fe88f1d0dc
+    with:
+      engine-ref: 14cdbdc4b205697dff67ff10b1f9d8fe88f1d0dc
+    secrets:
+      BITBUCKET_READ_KEY: ${{ secrets.BITBUCKET_READ_KEY }}
