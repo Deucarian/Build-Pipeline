@@ -12,6 +12,7 @@ permissions:
   contents: write
   pull-requests: write
   actions: write
+  checks: read
 
 concurrency:
   group: bitbucket-package-synchronization
@@ -20,8 +21,9 @@ concurrency:
 jobs:
   synchronize:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
-    uses: Deucarian/Package-Registry/.github/workflows/package-synchronization.yml@d018d78b90907c594baf3b95f613b43a71cab828
+    uses: Deucarian/Package-Registry/.github/workflows/package-synchronization.yml@14fff3bf381ae550c4231e8639915bff8138134c
     with:
-      engine-ref: d018d78b90907c594baf3b95f613b43a71cab828
+      engine-ref: 14fff3bf381ae550c4231e8639915bff8138134c
     secrets:
       BITBUCKET_READ_KEY: ${{ secrets.BITBUCKET_READ_KEY }}
+      PACKAGE_SYNC_APP_PRIVATE_KEY: ${{ secrets.PACKAGE_SYNC_APP_PRIVATE_KEY }}
