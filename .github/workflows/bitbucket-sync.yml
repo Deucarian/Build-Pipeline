@@ -21,9 +21,9 @@ concurrency:
 jobs:
   synchronize:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
-    uses: Deucarian/Package-Registry/.github/workflows/package-synchronization.yml@14fff3bf381ae550c4231e8639915bff8138134c
+    uses: Deucarian/Package-Registry/.github/workflows/package-synchronization.yml@55fcd64c78f13d43ac55de13efa1cb8327846b08
     with:
-      engine-ref: 14fff3bf381ae550c4231e8639915bff8138134c
+      engine-ref: 55fcd64c78f13d43ac55de13efa1cb8327846b08
     secrets:
       BITBUCKET_READ_KEY: ${{ secrets.BITBUCKET_READ_KEY }}
       PACKAGE_SYNC_APP_PRIVATE_KEY: ${{ secrets.PACKAGE_SYNC_APP_PRIVATE_KEY }}
